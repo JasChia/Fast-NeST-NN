@@ -1,0 +1,2 @@
+# Data.tar.gz filter=lfs diff=lfs merge=lfs -text
+Data_archives/*.tar.gz filter=lfs diff=lfs merge=lfs -text
