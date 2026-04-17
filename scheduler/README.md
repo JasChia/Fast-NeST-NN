@@ -5,6 +5,7 @@ This directory holds multiple experiment stacks (for example `fc_nn/`, `og_nest_
 ## What is in Git vs only on your machine
 
 - **Tracked in Git:** source code, configs, documentation, and anything **outside** `results/`.
+- **Not tracked (`jobs/` command lists):** files matching `*_advanced_jobs.json` and `*_jobs.txt` under any `jobs/` directory (regenerate with the local `generate_jobs.py` / pipeline you use for that experiment).
 - **Not tracked (outputs):** run artifacts live under names such as **`results/`**, **`long_results/`**, **`logs/`**, and **`shared/`** inside each experiment subfolder (exact layout varies by pipeline). These trees are the bulk of disk usage (often hundreds of GB to TB **per** experiment family). They are excluded via the root **`.gitignore`** (`scheduler/**/results/`, `scheduler/**/long_results/`, `scheduler/**/logs/`, `scheduler/**/shared/`) so `git push` stays practical.
 
 Your local or HPC checkout should keep the full `results/` directories where you already generated them; cloning this repo alone will **not** download those outputs.

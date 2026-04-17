@@ -14,3 +14,7 @@ scheduler/**/shared/
 scheduler/__pycache__/
 scheduler/**/__pycache__/
 scheduler/**/*.pyc
+
+# Generated scheduler job command lists (large JSON/txt; regenerate locally).
+scheduler/**/jobs/*_advanced_jobs.json
+scheduler/**/jobs/*_jobs.txt
