@@ -16,8 +16,6 @@ This directory holds **drug-response experiments** for *Sparsity, Structure, and
 | LP-NN | `LP-NN/` |
 | GP-NN | `GP-NN/`, `GP-NN_no_warmup/` (ablation) |
 | UGP-NN | `UGP-NN/` |
-| Uniform random direct-output SNN (baseline) | `uniform_random_direct_output_SNN/` |
-| Direct-input FC residual (ablation / pathway) | `fc_nn_direct_input/` |
 | Gene-order shuffle / NeST-sum experiments | `eNest_sum/` |
 | Pooled metrics, Wilcoxon, BH, **Pearson supplements** | `metrics_analysis/`, `sparse_wd/` |
 

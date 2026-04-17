@@ -26,9 +26,8 @@ METHOD_DISPLAY_NAMES = {
     'eNest_linear_fair': 'eNest',
     'Old_eNest': 'Old_eNest',
     'fc_nn': 'Fully Connected NN',
-    'fc_nn_direct_input': 'Fully Connected NN Direct Input',
+    # 'fc_nn_direct_input' and 'uniform_random_direct_output_SNN' removed from repo
     'fc_nn_DI_Layer_Pred': 'Fully Connected NN Direct Input Direct Layer Predictions',
-    'uniform_random_direct_output_SNN': 'Direct Output Uniform Random Sparse NN',
     # 'global_prune_nn': 'Global Prune NN',
     'global_prune_nn_warmup': 'Global Prune NN',
     'layer_prune_nn': 'Layer-wise Prune NN',
