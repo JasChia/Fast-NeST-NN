@@ -1,0 +1,4 @@
+Total FC edges (genotype_hiddens=4): 256096
+FC edges by layer: {0: 209456, 1: 38912, 2: 6656, 3: 832, 4: 128, 5: 64, 6: 32, 7: 16}
+
+

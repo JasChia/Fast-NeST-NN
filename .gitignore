@@ -1,0 +1,16 @@
+.secrets
+Data/
+.git-credentials
+nohup.out
+NeSTVNNShuffleAnalysis/
+.nfs*
+
+# Scheduler experiment outputs (multi-TB on disk; not suitable for Git/Git LFS).
+# The rest of `scheduler/` (code, configs, READMEs) is tracked.
+scheduler/**/results/
+scheduler/**/long_results/
+scheduler/**/logs/
+scheduler/**/shared/
+scheduler/__pycache__/
+scheduler/**/__pycache__/
+scheduler/**/*.pyc

@@ -1,0 +1,1 @@
+Uniform sparse NN of exact NeST VNN Sparsity, w/ intermediate predictions every genotype_hidden nodes via direct output connections.
