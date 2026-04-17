@@ -1,38 +1,47 @@
 # Scheduler workspace
 
-This directory holds multiple experiment stacks (for example `fc_nn/`, `og_nest_vnn/`, `r_sparse_nn/`, and others). Each subfolder typically contains Python entrypoints, shell helpers, and a **`README.md`** describing how runs are launched.
+This directory holds **drug-response experiments** for *Sparsity, Structure, and Interpretability in Biologically Informed Neural Networks for Drug Response Prediction* (ICIBM 2026). Each subfolder corresponds to a **named model or analysis** in the paper.
+
+## Model ↔ folder (paper notation)
+
+| Paper name | Typical folder |
+|------------|------------------|
+| NeST-VNN | `NeST-VNN/` |
+| fNeST-NN | `fNeST-NN/` |
+| FCNN | `FCNN/` |
+| Dense-fNeST | `Dense-fNeST/` |
+| RSNN | `RSNN/` |
+| ERK-SNN | `ERK_SNN/` |
+| RP-fNeST | `RP-fNeST/` |
+| LP-NN | `LP-NN/` |
+| GP-NN | `GP-NN/`, `GP-NN_no_warmup/` (ablation) |
+| UGP-NN | `UGP-NN/` |
+| Uniform random direct-output SNN (baseline) | `uniform_random_direct_output_SNN/` |
+| Direct-input FC residual (ablation / pathway) | `fc_nn_direct_input/` |
+| Gene-order shuffle / NeST-sum experiments | `eNest_sum/` |
+| Pooled metrics, Wilcoxon, BH, **Pearson supplements** | `metrics_analysis/`, `sparse_wd/` |
+
+See each folder’s **`README.md`** for commands. Folders **not** listed here may be legacy or in flux; treat as non-paper unless documented.
 
 ## What is in Git vs only on your machine
 
-- **Tracked in Git:** source code, configs, documentation, and anything **outside** `results/`.
-- **Not tracked (`jobs/` command lists):** files matching `*_advanced_jobs.json` and `*_jobs.txt` under any `jobs/` directory (regenerate with the local `generate_jobs.py` / pipeline you use for that experiment).
-- **Not tracked (outputs):** run artifacts live under names such as **`results/`**, **`long_results/`**, **`logs/`**, and **`shared/`** inside each experiment subfolder (exact layout varies by pipeline). These trees are the bulk of disk usage (often hundreds of GB to TB **per** experiment family). They are excluded via the root **`.gitignore`** (`scheduler/**/results/`, `scheduler/**/long_results/`, `scheduler/**/logs/`, `scheduler/**/shared/`) so `git push` stays practical.
+- **Tracked:** Python sources, small CSV/JSON summaries, READMEs, and **bundled job command lists** under each model’s `jobs/` (paths relative to `<repo>/Data/`).
+- **Not tracked:** `**/results/`, `**/long_results/`, `**/logs/`, `**/shared/` (see root `.gitignore`).
 
-Your local or HPC checkout should keep the full `results/` directories where you already generated them; cloning this repo alone will **not** download those outputs.
+Clone the repo, extract **`Data_archives/`** into **`Data/`** at the repo root (see root `README.md`). Job files use `../../Data/...` from `scheduler/<Model>/`; to point elsewhere, set **`FAST_NEST_DATA_ROOT`** in the environment *or* bulk-replace that prefix in the job lists. **Run the shell commands** in each model’s `jobs/*_jobs.txt` from that model’s directory (skip `#` comment lines), or feed the file to your cluster scheduler (Slurm, GNU Parallel, etc.); this repo no longer ships in-tree GPU queue drivers.
 
-## Compressing or moving a `results/` folder (optional)
+## Optional archiving
 
-To archive or copy a single experiment’s outputs without changing tracked code, compress from **inside** the parent of `results/` (example: `scheduler/og_nest_vnn/`):
+To tarball a local `results/` tree for backup (does not change Git):
 
 ```bash
-cd scheduler/og_nest_vnn
+cd scheduler/<ModelFolder>
 tar -I 'gzip -1' -cf results.tar.gz results
 ```
 
-Restore elsewhere:
+Very large trees can be split (e.g. `tar -cf - results | split -b 1800m - results.tar.part-`) for off-site storage; see each model README for conventions.
 
-```bash
-tar -xzf results.tar.gz
-```
+## Root-level helpers
 
-For very large trees, split an **uncompressed** tar stream so each part stays under GitHub LFS’s **2 GiB per file** limit if you ever store parts in LFS or on another host:
-
-```bash
-tar -cf - results | split -b 1800m - results.tar.part-
-# Restore:
-cat results.tar.part-* | tar -xf -
-```
-
-## Nested Git metadata
-
-This tree is part of the **Fast-NeST-NN** monorepo on `main`. A historical nested `.git` under `scheduler/` was removed so experiment folders are ordinary directories here, not a separate repository.
+- `compute_metrics_and_comparisons.py` / `compute_metrics_and_comparisons_median_mad.py` — aggregate statistics across methods (paired tests, multiple comparison adjustment); inputs are CSVs produced under each model’s `results/` or `metrics_analysis/`.
+- `extract_non_significant_pvalues.py` — supplementary filtering helper for reported tables.

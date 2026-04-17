@@ -26,7 +26,7 @@ The **`scheduler/`** tree is tracked as part of this repository (nested `.git` m
 
 **Training and tuning outputs** live under folders such as **`results/`**, **`long_results/`**, **`logs/`**, and **`shared/`** inside those subfolders (names vary by pipeline). On a full machine those trees can be **terabytes** in total, so they are **gitignored** (`scheduler/**/results/`, `scheduler/**/long_results/`, etc.) and are **not** pushed to GitHub. Your local or cluster copy keeps the full output trees as produced by the pipelines.
 
-See **[scheduler/README.md](scheduler/README.md)** for layout, what is tracked vs local-only, and how to **compress or ship** a `results/` tree yourself (for backup or transfer) without bloating the remote.
+See **[scheduler/README.md](scheduler/README.md)** for the **paper model ↔ folder map**, what is tracked vs local-only, and optional archiving of `results/`.
 
 ### `repo_archives/` (in Git, LFS) — `NeSTVNNShuffleAnalysis` only
 
