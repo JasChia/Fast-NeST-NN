@@ -5,8 +5,7 @@ Exploratory / ablation stack using a **fully connected residual-style block with
 ## Files
 
 - `fc_nn_residual.py`, `fc_nn_residual_hparam_tuner.py` — model + Optuna (run from this directory).
-- `advanced_gpu_queue.py` — optional queue driver.
 
 Rename note: `fc_nn_residual_*` predates the folder name `fc_nn_direct_input`; behavior matches “direct input” experiments in the supplement.
 
-Configure data paths in the tuner / queue scripts to your extracted `Data_archives/` trees.
+Configure data paths on the command line to your **`Data/`** tree (see repository root `README.md` and `Data_archives/`). There is no bundled `jobs/` list in this folder; construct commands similarly to `scheduler/FCNN/`.
