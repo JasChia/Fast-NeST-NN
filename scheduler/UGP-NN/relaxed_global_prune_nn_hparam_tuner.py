@@ -170,6 +170,7 @@ parser = argparse.ArgumentParser(description = 'Train Sparse_NN')
 parser.add_argument('-cuda', help = 'Specify GPU', type = int, default = 0)
 parser.add_argument('-drug', help = 'Drug ID', type = int, default = -1)
 parser.add_argument('-n_trials', help = 'Number of Optuna trials', type=int, default=100)
+parser.add_argument('-max_epochs', help = 'Max training epochs per Optuna trial', type=int, default=500)
 # Data preprocessing arguments
 parser.add_argument('-train_file', help = 'Training data file', type=str)
 parser.add_argument('-val_file', help = 'Validation data file', type=str)
@@ -297,7 +298,7 @@ class OptunaSparseNNTrainer():
         # BatchNorm hyperparameter
         self.use_batchnorm = trial.suggest_categorical("use_batchnorm", [True, False])
         
-        self.epochs = 500
+        self.epochs = args.max_epochs
         
         print(f"Trial {trial.number}: h={self.genotype_hiddens}, lr={self.lr:.2e}, drop={self.dropout:.2f}, act={activation_choice}, batch_size={int(2 ** self.batch_size_power)}, prune_freq={self.prune_frequency}, prune_pct={self.prune_percentage:.3f}, warmup={self.warmup}, batchnorm={self.use_batchnorm}")
         sys.stdout.flush()

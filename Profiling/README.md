@@ -6,11 +6,27 @@ Model code lives under **`helpers/`** (vendored snapshots) so profiling does not
 
 ---
 
+## Environment (recommended)
+
+Use the Conda **`environment.yml`** at the **repository root** (see root **`README.md`**), which includes PyTorch (CUDA 11.x), NumPy/Pandas, matplotlib, networkx, scikit-learn, scipy, and tqdm—matching or exceeding **`Profiling/requirements.txt`**.
+
+```bash
+cd /path/to/Fast-NeST-NN
+conda env create -f environment.yml
+conda activate fast-nest-nn
+```
+
+Alternatively: **`pip install -r requirements.txt`** in **`Profiling/`**, then install PyTorch for your platform from [pytorch.org](https://pytorch.org/get-started/locally/).
+
+**Smoke test:** from the repo root, **`bash scripts/verify_repo.sh`** runs **`./run_profiling.sh --cpu --num-runs 2`** and writes **`Profiling/VERIFY_SMOKE_results/`** (gitignored).
+
+---
+
 ## Quick start (from a fresh clone)
 
 ```bash
 cd Fast-NeST-NN/Profiling
-pip install -r requirements.txt
+pip install -r requirements.txt   # skip if you used root environment.yml
 # Install PyTorch: https://pytorch.org/get-started/locally/
 ./run_profiling.sh --cpu --num-runs 10 --nodes-per-assembly 4 --output-dir profiling_results
 ```

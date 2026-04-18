@@ -4,6 +4,16 @@
 
 This folder no longer includes `generate_jobs.py` or in-tree GPU queue scripts. Use **`jobs/r_sparse_nn_jobs.txt`** from **`scheduler/RSNN/`** (one shell command per line; skip `#` comments). Paths use **`../../Data/...`**. Run with Slurm, GNU Parallel, or your cluster scheduler.
 
+### Environment and CLI (current code)
+
+Activate the Conda **`environment.yml`** from the repository root (see root **`README.md`**) or **`cuda11_env`**.
+
+**`r_sparse_nn_hparam_tuner.py`** supports **`-n_trials`**, **`-max_epochs`** (default **500**; use **`-max_epochs 10`** for a quick run), **`-cuda`**, **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**, **`-output_dir`**.
+
+**Expected outputs:** **`Sparse_NN_HTune.log`**, **`trials/trial_*/model_best.pt`**, **`best_model/`**, **`final_results.json`**, per-trial **`metrics.csv`**. (Older documentation below may still mention `model_final.pt`; the tuner now saves a single **`model_best.pt`**.)
+
+**Smoke test:** the repo provides **`bash scripts/verify_repo.sh`** (fNeST-NN + Profiling only).
+
 ## Overview
 
 This directory contains a complete system for hyperparameter tuning of sparse neural networks (Sparse_NN) for drug response prediction. The system uses Optuna for automated hyperparameter optimization and manages GPU resources to run hundreds of experiments in parallel.

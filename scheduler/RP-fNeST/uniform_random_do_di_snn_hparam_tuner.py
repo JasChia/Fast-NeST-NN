@@ -35,9 +35,6 @@ os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "2")
 
 DEFAULT_PATIENCE = 20
-MAX_EPOCHS = 500
-
-
 # ---------------------- Utility functions ---------------------- #
 def set_seed(seed: int) -> None:
     """Set random seeds for reproducibility."""
@@ -261,7 +258,7 @@ class OptunaDODISparseNNTrainer:
         elif activation_choice == "ReLU":
             self.activation = nn.ReLU
 
-        self.epochs = MAX_EPOCHS
+        self.epochs = self.args.max_epochs
 
         print(f"Trial {trial.number}: h={self.genotype_hiddens}, lr={self.lr:.2e}, drop={self.dropout:.2f}, act={activation_choice}, batch_size={int(2 ** self.batch_size_power)}", end="")
         sys.stdout.flush()
@@ -469,6 +466,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-cuda", type=int, default=0, help="Specify GPU index")
     parser.add_argument("-drug", type=int, default=-1, help="Drug ID")
     parser.add_argument("-n_trials", type=int, default=100, help="Number of Optuna trials")
+    parser.add_argument("-max_epochs", type=int, default=500, help="Max training epochs per Optuna trial")
     parser.add_argument("-train_file", type=str, help="Training data file")
     parser.add_argument("-val_file", type=str, help="Validation data file")
     parser.add_argument("-test_file", type=str, help="Test data file")

@@ -70,6 +70,16 @@ grep -v '^#' jobs/uniform_random_do_di_snn_jobs.txt | grep -v '^$' | bash
 
 Use Slurm, GNU Parallel, or your site scheduler for parallel execution. Ensure **`Data/`** exists at the repo root (see root `README.md`).
 
+### Environment and CLI
+
+Use the repository root **`environment.yml`** (see root **`README.md`**) or **`cuda11_env`**.
+
+**`uniform_random_do_di_snn_hparam_tuner.py`**: **`-n_trials`**, **`-max_epochs`** (default **500**), **`-cuda`**, **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**, **`-output_dir`**.
+
+**Expected outputs:** Optuna journal, **`trials/trial_*/model_best.pt`**, **`best_model/`**, **`final_results.json`**, **`metrics.csv`**.
+
+Repo smoke test: **`bash scripts/verify_repo.sh`** (fNeST-NN + Profiling).
+
 ### 2. Logs and monitoring
 
 Use your scheduler’s logs; this repo does not ship the old Python GPU queue drivers.

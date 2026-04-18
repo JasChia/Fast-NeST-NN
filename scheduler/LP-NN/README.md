@@ -16,6 +16,16 @@
 
 In-tree `generate_jobs.py` and GPU queue scripts are **not** shipped here. Use **`jobs/layer_prune_nn_jobs.txt`** from **`scheduler/LP-NN/`** (one command per line; skip `#` comments). Paths assume **`Data/`** at the repo root (`../../Data/...`). Execute with Slurm, GNU Parallel, or your scheduler.
 
+### Environment and CLI (current code)
+
+Use the repository root **`environment.yml`** (see root **`README.md`**) or **`cuda11_env`**.
+
+**`layer_prune_nn_hparam_tuner.py`**: **`-n_trials`**, **`-max_epochs`** (default **500**), standard data paths as in **`jobs/`**.
+
+**Expected outputs:** Optuna journal (**`LayerPrunedFC_NN_HTune.log`**), **`trials/trial_*/model_best.pt`** (when target sparsity is met), **`best_model/`** with baked-in weights, **`final_results.json`**. Older sections may mention `model_final.pt`; the tuner now saves a single portable **`model_best.pt`**.
+
+**Smoke test:** **`bash scripts/verify_repo.sh`**.
+
 ---
 
 ## Overview

@@ -56,9 +56,6 @@ os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "2")
 
 DEFAULT_PATIENCE = 20
-MAX_EPOCHS = 500
-
-
 # ---------------------- Utility functions ---------------------- #
 def set_seed(seed: int) -> None:
     """Set random seeds for reproducibility."""
@@ -553,7 +550,7 @@ class OptunaNestVNNTrainer:
         # Min dropout layer
         self.min_dropout_layer = trial.suggest_int("min_dropout_layer", 1, 4, step=1)
         
-        self.epochs = MAX_EPOCHS
+        self.epochs = self.args.max_epochs
 
         print(f"\nTrial {trial.number}: h={self.genotype_hiddens}, lr={self.lr:.2e}, "
               f"drop={self.dropout:.2f}, alpha={self.alpha:.2f}, "
@@ -926,6 +923,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-cuda", type=int, default=0, help="Specify GPU index")
     parser.add_argument("-drug", type=int, default=-1, help="Drug ID")
     parser.add_argument("-n_trials", type=int, default=100, help="Number of Optuna trials")
+    parser.add_argument("-max_epochs", type=int, default=500, help="Max training epochs per Optuna trial")
     parser.add_argument("-seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("-output_dir", type=str, default="./results", 
                        help="Output directory for saving models and results")

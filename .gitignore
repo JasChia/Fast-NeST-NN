@@ -2,7 +2,6 @@
 Data/
 .git-credentials
 nohup.out
-NeSTVNNShuffleAnalysis/
 .nfs*
 
 # Scheduler experiment outputs (multi-TB on disk; not suitable for Git/Git LFS).
@@ -16,3 +15,8 @@ scheduler/**/__pycache__/
 scheduler/**/*.pyc
 
 # Job lists under scheduler/*/jobs/ are tracked (relative paths to <repo>/Data).
+
+# Local smoke / verification outputs (see scripts/verify_repo.sh)
+Profiling/VERIFY_SMOKE_results/
+scheduler/**/VERIFY_SMOKE/
+nohup.out

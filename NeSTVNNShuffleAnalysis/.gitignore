@@ -1,0 +1,3 @@
+nest_vnn/nest_vnn_logs
+# Generated shuffle QA artifacts (large JSON / logs from analyze_shuffle_assignments.py)
+nest_vnn/shuffle_assignment_analysis/outputs/

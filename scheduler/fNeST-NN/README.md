@@ -30,3 +30,44 @@ grep -v '^#' jobs/fnest_nn_jobs.txt | grep -v '^$' | bash
 ```
 
 For large sweeps, use your cluster scheduler (Slurm, GNU Parallel, etc.) instead of a bare shell loop. Run artifacts live under `results/`, `logs/`, and `shared/` (gitignored at repo level).
+
+## Environment
+
+Use the Conda **`environment.yml`** at the repository root (see root **`README.md`**) or an equivalent env (for example **`cuda11_env`**) with PyTorch, Optuna, pandas, and **`torchmetrics`**.
+
+## Running `fnest_nn_hparam_tuner.py` manually
+
+Required arguments: **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**. Common options: **`-n_trials`**, **`-max_epochs`** (default **500**; use **`-max_epochs 10`** for a quick sanity check), **`-cuda`**, **`-seed`**, **`-output_dir`**.
+
+Example (nested **`nest_shuffle_data/...`** paths; use **`Data/D{N}_CL/...`** if your checkout uses the flat layout):
+
+```bash
+conda activate fast-nest-nn
+cd scheduler/fNeST-NN
+python -u fnest_nn_hparam_tuner.py \
+  -cuda 0 -drug 298 \
+  -train_file ../../Data/nest_shuffle_data/CombatLog2TPM/Drug298/D298_CL/train_test_splits/experiment_0/true_training_data.txt \
+  -val_file ../../Data/nest_shuffle_data/CombatLog2TPM/Drug298/D298_CL/train_test_splits/experiment_0/validation_data.txt \
+  -test_file ../../Data/nest_shuffle_data/CombatLog2TPM/Drug298/D298_CL/train_test_splits/experiment_0/test_data.txt \
+  -cell2id ../../Data/nest_shuffle_data/CombatLog2TPM/Drug298/D298_CL/D298_cell2ind.txt \
+  -ge_data ../../Data/nest_shuffle_data/CombatLog2TPM/Drug298/D298_CL/D298_GE_Data.txt \
+  -n_trials 100 -max_epochs 500 -seed 0 -output_dir results/D298/D298_0
+```
+
+**Automated smoke test:** from the repo root, **`bash scripts/verify_repo.sh`** runs **`-n_trials 2 -max_epochs 10`** and writes under **`results/VERIFY_SMOKE/`**.
+
+## Expected outputs (under `-output_dir`)
+
+| Artifact | Description |
+|----------|-------------|
+| `fnest_nn_HTune.log` | Optuna journal file for the study |
+| `trials/trial_<k>/model_best.pt` | Best validation checkpoint for that trial |
+| `trials/trial_<k>/metrics.csv` | Validation/test metrics for that trial |
+| `best_model/` | Copy of the best trial by validation R² |
+| `final_results.json` | Study summary |
+| `best_model_results.csv` | One-line best validation/test R² |
+
+## What to change on your system
+
+- **`FAST_NEST_DATA_ROOT`** or edit paths if data are not under `<repo>/Data`.
+- **`../../Data/`** prefix in **`jobs/fnest_nn_jobs.txt`** if your relative layout differs.

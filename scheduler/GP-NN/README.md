@@ -16,6 +16,16 @@
 
 In-tree `generate_jobs.py` and GPU queue scripts are **not** shipped here. Use **`jobs/global_prune_nn_warmup_jobs.txt`** (one command per line; skip `#` comments) from **`scheduler/GP-NN/`**. Paths assume **`Data/`** at the repo root (`../../Data/...`). Execute lines with Slurm, GNU Parallel, or your site’s job runner.
 
+### Environment and CLI (current code)
+
+Activate the Conda **`environment.yml`** from the repository root (see root **`README.md`**) or **`cuda11_env`**.
+
+**`global_prune_nn_hparam_tuner.py`**: **`-n_trials`**, **`-max_epochs`** (default **500**), **`-cuda`**, **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**, **`-output_dir`**.
+
+**Expected outputs:** **`GlobalPrunedFC_NN_HTune.log`**, **`trials/trial_*/model_best.pt`** (when target sparsity is reached), **`best_model/`** with baked-in weights, **`final_results.json`**, **`detailed_metrics.json`**. Long-form documentation below may still refer to `model_final.pt`; the pipeline now **overwrites `model_best.pt`** with mask-free weights after **`prune.remove()`**.
+
+**Smoke test:** **`bash scripts/verify_repo.sh`** (fNeST + Profiling only).
+
 ---
 
 ## Overview

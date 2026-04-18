@@ -4,6 +4,16 @@
 
 This folder no longer includes `generate_jobs.py` or in-tree GPU queue scripts. Use **`jobs/ERK_SNN_jobs.txt`** from **`scheduler/ERK_SNN/`** (one shell command per line; skip `#` comments). Paths use **`../../Data/...`** relative to this directory. Run lines with your cluster scheduler (Slurm, GNU Parallel, etc.).
 
+### Environment and CLI (current code)
+
+Use the root **`environment.yml`** (see repo **`README.md`**) or **`cuda11_env`**.
+
+**`ERK_SNN_hparam_tuner.py`**: **`-n_trials`**, **`-max_epochs`** (default **500**), **`-cuda`**, standard data arguments as in **`jobs/ERK_SNN_jobs.txt`**.
+
+**Expected outputs:** **`ERK_SNN_HTune.log`**, **`trials/trial_*/model_best.pt`**, **`best_model/`**, **`final_results.json`**. (Older sections below may mention `model_final.pt`; the tuner now keeps a single **`model_best.pt`** per trial.)
+
+**Smoke test:** **`bash scripts/verify_repo.sh`**.
+
 ## Overview
 
 This directory contains a complete system for hyperparameter tuning of ERK_SNN (Erdos-Renyi Kernel Sparse Neural Network) for drug response prediction. The system uses Optuna for automated hyperparameter optimization and manages GPU resources to run hundreds of experiments in parallel.

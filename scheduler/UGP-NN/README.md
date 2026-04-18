@@ -16,6 +16,16 @@
 
 In-tree `generate_jobs.py` and GPU queue scripts are **not** shipped here. Use **`jobs/relaxed_global_prune_nn_warmup_jobs.txt`** from **`scheduler/UGP-NN/`** (one command per line; skip `#` comments). Paths assume **`Data/`** at the repo root (`../../Data/...`). Execute with Slurm, GNU Parallel, or your scheduler.
 
+### Environment and CLI (current code)
+
+Use the repository root **`environment.yml`** (see root **`README.md`**) or **`cuda11_env`**.
+
+**`relaxed_global_prune_nn_hparam_tuner.py`**: **`-n_trials`**, **`-max_epochs`** (default **500**), standard data paths as in **`jobs/`**.
+
+**Expected outputs:** Optuna journal, **`trials/trial_*/model_best.pt`**, **`best_model/`** with baked-in weights after training, **`final_results.json`**. Long-form docs below may reference `model_final.pt`; behavior matches **GP-NN** (single **`model_best.pt`** on disk).
+
+**Smoke test:** **`bash scripts/verify_repo.sh`**.
+
 ---
 
 ## Overview

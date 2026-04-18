@@ -23,3 +23,13 @@ grep -v '^#' jobs/dense_fnest_jobs.txt | grep -v '^$' | bash
 ```
 
 For large sweeps, prefer a real scheduler (e.g. Slurm `sbatch` with one task per line, or `parallel -a jobs/dense_fnest_jobs.txt`). Outputs: `results/`, `logs/` (gitignored).
+
+## Environment and CLI
+
+Use the repository root **`environment.yml`** (see root **`README.md`**) or **`cuda11_env`**.
+
+**`dense_fnest_hparam_tuner.py`** accepts **`-n_trials`**, **`-max_epochs`** (default **500**), **`-cuda`**, and the usual **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**, **`-output_dir`**.
+
+**Expected outputs:** Optuna journal log under the output dir, **`trials/trial_*/model_best.pt`**, **`best_model/`**, **`final_results.json`**, **`metrics.csv`** per trial.
+
+Repo smoke test (**fNeST-NN + Profiling**): **`bash scripts/verify_repo.sh`**.

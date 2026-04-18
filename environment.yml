@@ -1,0 +1,36 @@
+# Minimal conda environment for Fast-NeST-NN (paper + scheduler + Profiling).
+# Mirrors the intent of cuda11_env: PyTorch with CUDA 11.x, Optuna, scientific stack.
+#
+# Create (recommended):
+#   conda env create -f environment.yml
+#   conda activate fast-nest-nn
+#
+# Update an existing env from this file:
+#   conda env update -f environment.yml --prune
+#
+# CPU-only: install PyTorch from https://pytorch.org for your platform, then:
+#   conda install --file <(grep -v pytorch-cuda environment.yml)  # or use pip for torch
+name: fast-nest-nn
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  # CUDA 11.8 runtime (matches common "cuda11" stacks; adjust via pytorch.org if needed)
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - pytorch::pytorch-cuda=11.8
+  - optuna>=3.0,<4
+  - pandas>=1.3
+  - numpy>=1.21
+  - scipy>=1.7
+  - scikit-learn>=1.0
+  - matplotlib>=3.5
+  - statsmodels
+  - networkx>=2.6
+  - tqdm>=4.60
+  - pip:
+    - torchmetrics>=0.10
