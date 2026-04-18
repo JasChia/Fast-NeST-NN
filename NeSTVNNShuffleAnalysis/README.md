@@ -1,6 +1,8 @@
 # NeST-VNN shuffle experiment (reproducible pipeline)
 
-This repository contains the **NeST-VNN** gene-order shuffle study: for each of **12 drugs**, **50** paired runs (**shuffled** vs **unshuffled** input gene order), with metrics and statistical summaries used in the paper tables.
+This directory is part of the **Fast-NeST-NN** monorepo at **`NeSTVNNShuffleAnalysis/`** (tracked on `main`). You do **not** need to extract a separate archive; clone the repository once and work from this folder.
+
+This workspace implements the **NeST-VNN** gene-order shuffle study: for each of **12 drugs**, **50** paired runs (**shuffled** vs **unshuffled** input gene order), with metrics and statistical summaries used in the paper tables.
 
 Repository layout:
 
@@ -87,7 +89,7 @@ If your data live elsewhere, either symlink `Data` → that location or set **`N
 
 ## Replicating training (all commands in `jobs.txt`)
 
-1. **Clone** the repository and populate **`Data/`** as above.
+1. **Clone** the **Fast-NeST-NN** repository (this monorepo) and populate **`Data/`** at the repo root as described below (or **`NeSTVNNShuffleAnalysis/Data/`** with the same tree).
 
 2. **Working directory must be `nest_vnn/`** so relative paths resolve:
 
@@ -139,22 +141,24 @@ Stdout from each job is redirected to **`D{drug}_{shuffled|unshuffled}_exp_{k}.l
 - `D{drug}_{shuffled|unshuffled}_exp_{k}/` (for example, `D5_shuffled_exp_0/`)
 - Each run directory stores metrics, prediction outputs, and logs described in the "Expected output structure" section above.
 
-To package all run outputs into a single compressed archive:
+To package all run outputs into a single compressed archive (from **`nest_vnn/`**):
 
 ```bash
-tar -czf "/nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/NeSTVNNShuffleAnalysis/nest_vnn/nest_vnn_logs.tar.gz" -C "/nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/NeSTVNNShuffleAnalysis/nest_vnn" "nest_vnn_logs"
+cd NeSTVNNShuffleAnalysis/nest_vnn
+tar -czf nest_vnn_logs.tar.gz -C . nest_vnn_logs
 ```
 
 To extract that archive back into `nest_vnn/`:
 
 ```bash
-tar -xzf "/nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/NeSTVNNShuffleAnalysis/nest_vnn/nest_vnn_logs.tar.gz" -C "/nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/NeSTVNNShuffleAnalysis/nest_vnn"
+cd NeSTVNNShuffleAnalysis/nest_vnn
+tar -xzf nest_vnn_logs.tar.gz -C .
 ```
 
 Quick verification after extraction:
 
 ```bash
-ls "/nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/NeSTVNNShuffleAnalysis/nest_vnn/nest_vnn_logs" | head
+ls nest_vnn_logs | head
 ```
 
 ---

@@ -17,9 +17,10 @@ This directory holds **drug-response experiments** for *Sparsity, Structure, and
 | GP-NN | `GP-NN/`, `GP-NN_no_warmup/` (ablation) |
 | UGP-NN | `UGP-NN/` |
 | Gene-order shuffle / NeST-sum experiments | `eNest_sum/` |
+| NeST-VNN **gene-order shuffle** (paired shuffled vs unshuffled runs) | **`NeSTVNNShuffleAnalysis/`** (repository root; not under `scheduler/`) |
 | Pooled metrics, Wilcoxon, BH, **Pearson supplements** | `metrics_analysis/`, `sparse_wd/` |
 
-See each folder’s **`README.md`** for commands. Folders **not** listed here may be legacy or in flux; treat as non-paper unless documented.
+See each folder’s **`README.md`** for commands. The **shuffle** pipeline is documented under **`NeSTVNNShuffleAnalysis/README.md`**. Folders **not** listed here may be legacy or in flux; treat as non-paper unless documented.
 
 ## What is in Git vs only on your machine
 
