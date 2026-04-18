@@ -22,7 +22,6 @@ import numpy as np
 import os
 import argparse
 import shutil
-from copy import deepcopy
 from scipy import stats
 
 # Data preprocessing functions adapted from util.py
@@ -393,10 +392,7 @@ class OptunaSparseNNTrainer():
             optimizer = torch.optim.AdamW(model.parameters(), lr=self.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.wd)
 
             min_loss = None
-            best_model_state = None
             counter = 0
-            best_val_r2 = -100
-            best_val_r2_epoch = -1
             val_loss = 100  # Initialize val_loss
 
             for epoch in range(epochs):
@@ -461,44 +457,27 @@ class OptunaSparseNNTrainer():
                 with torch.no_grad():
                     model.eval()
                     cl_val_pred = model(cl_val_data.to(device))
-                    
-                    # Check for NaN/inf in validation predictions
-                    if torch.any(torch.isnan(cl_val_pred)) or torch.any(torch.isinf(cl_val_pred)):
-                        print(f"Warning: Validation predictions contain NaN/inf values.")
-                        print(f"Val prediction stats: min={cl_val_pred.min().item():.6f}, max={cl_val_pred.max().item():.6f}")
-                        val_r2 = -1000.0  # Very low R² for invalid predictions
-                    else:
-                        val_r2 = get_r2_score(cl_val_pred, cl_val_labels)
-                    
+
                     # Ensure validation labels have the same shape as predictions
                     if cl_val_labels.dim() == 1:
                         cl_val_labels = cl_val_labels.unsqueeze(1)
                     new_val_loss = loss_fn(cl_val_pred, cl_val_labels.to(device))
-                    
+
                     # Check validation loss
                     if torch.isnan(new_val_loss) or torch.isinf(new_val_loss):
                         print(f"Warning: Validation loss is NaN/inf. Setting to large value.")
                         new_val_loss = torch.tensor(1000.0, device=device)
-                    
+
                     # Report validation loss to Optuna every epoch
                     trial.report(new_val_loss.item(), epoch)
-                    
-                    # Save best model based on validation loss
-                    if min_loss is None:
+
+                    # Save best model based on validation loss (delta threshold 1e-4).
+                    # First epoch always saves; subsequent epochs save only on a strict improvement.
+                    if min_loss is None or (min_loss - new_val_loss).item() > 1e-4:
                         min_loss = new_val_loss
-                        best_model_state = deepcopy(model.state_dict())
                         torch.save(model.state_dict(), f"{trial_dir}/model_best.pt")
                         print(f"Model saved at epoch {epoch}")
-                    elif min_loss - new_val_loss > 0.0001:  # delta threshold
-                        min_loss = new_val_loss
-                        best_model_state = deepcopy(model.state_dict())
-                        torch.save(model.state_dict(), f"{trial_dir}/model_best.pt")
-                        print(f"Model saved at epoch {epoch}")
-                    
-                    if (val_r2 > best_val_r2):
-                        best_val_r2 = val_r2
-                        best_val_r2_epoch = epoch
-                    
+
                     if (val_loss - new_val_loss < 0.0001):
                         counter += 1
                         if (counter >= self.patience):
@@ -506,40 +485,33 @@ class OptunaSparseNNTrainer():
                     else:
                         val_loss = new_val_loss
                         counter = 0
-                    
+
                     # Check if trial should be pruned
                     if trial.should_prune():
                         print(f"Trial {trial.number} pruned at epoch {epoch}")
                         raise optuna.exceptions.TrialPruned()
-            
-            # Load the best model for final evaluation
-            if best_model_state is not None:
-                print("\nLoading best model for final evaluation...")
-                model.load_state_dict(best_model_state)
-                torch.save(model.state_dict(), f"{trial_dir}/model_final.pt")
-                print("Best model saved as model_final.pt")
-            else:
-                print("\nNo best model found, using final model...")
-            
-            # Evaluate best model on validation and test data
+
+            # Load the best checkpoint from disk for final evaluation
+            print("\nLoading best model from saved checkpoint...")
+            model.load_state_dict(torch.load(f"{trial_dir}/model_best.pt", map_location=device))
+
             print("\nEvaluating best model on validation data...")
             val_metrics = evaluate_model_metrics(model, cl_val_data, cl_val_labels, device)
-            
+
             print("\nEvaluating best model on test data...")
             test_metrics = evaluate_model_metrics(model, cl_test_data, cl_test_labels, device)
-            
-            # Save metrics to CSV
+
             save_metrics_to_csv(val_metrics, test_metrics, trial_dir)
-            
-            final_val_r2, final_test_r2 = self.print_model_statistics(f"{trial_dir}/model_best.pt", cl_train_data, cl_train_labels, cl_val_data, cl_val_labels, cl_test_data, cl_test_labels, trial.number)
-            print(f"Best Val R2: {best_val_r2}=={final_val_r2} from Epoch {best_val_r2_epoch} | Test R2: {final_test_r2}")
+
+            final_val_r2 = val_metrics["r2_score"]
+            final_test_r2 = test_metrics["r2_score"]
+            print(f"Val R2: {final_val_r2} Test R2: {final_test_r2}")
             print(f"---------- Trial {trial.number} complete after {epoch} epochs ----------")
             sys.stdout.flush()
 
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
-            
-            print(f"Val R2: {final_val_r2} Test R2: {final_test_r2}")
+
             if (final_val_r2 > self.best):
                 self.best = final_val_r2
                 self.best_test = final_test_r2
@@ -609,72 +581,6 @@ class OptunaSparseNNTrainer():
         if test_metrics and 'predictions' in test_metrics:
             np.savetxt(f"{trial_dir}/test_predictions.txt", test_metrics['predictions'], '%.6f')
             np.savetxt(f"{trial_dir}/test_true_labels.txt", test_metrics['true_labels'], '%.6f')
-
-    def print_model_statistics(self, modeldir, cl_train_data, cl_train_labels, cl_val_data, cl_val_labels, cl_test_data, cl_test_labels, trial_number):
-        total_val_r2 = 0.0
-        total_train_r2 = 0.0
-        total_train_loss = 0.0
-        total_val_loss = 0.0
-        cl_val_pred = None
-        cl_train_pred = None
-
-        # Recreate model with same hyperparameters
-        # Note: For evaluation, we use the base seed since we're loading a saved model
-        # The architecture was already determined during training with trial-specific seed
-        try:
-            model = Sparse_NN(
-                dropout_fraction=self.dropout,
-                activation=self.activation,
-                genotype_hiddens=self.genotype_hiddens,
-                seed=args.seed  # Use base seed for evaluation
-            ).to(device)
-        except RuntimeError as e:
-            if "Failed to generate valid network" in str(e):
-                print(f"Failed to generate valid sparse network for model evaluation")
-                print("Skipping model statistics evaluation")
-                return 0.0, 0.0
-            else:
-                raise e
-        model.load_state_dict(torch.load(f"{modeldir}"))
-        model.eval()
-        model = model.to(device)  # Move model to GPU
-        with torch.no_grad():
-            loss_fn = nn.MSELoss()
-            if (cl_val_pred == None):
-                cl_val_pred = model(cl_val_data.to(device))
-            else:
-                temp_cl_val_pred = model(cl_val_data.to(device))
-                cl_val_pred += temp_cl_val_pred
-            # Ensure labels have the same shape as predictions
-            if cl_val_labels.dim() == 1:
-                cl_val_labels = cl_val_labels.unsqueeze(1)
-            total_val_loss += loss_fn(cl_val_pred, cl_val_labels.to(device))
-        
-            if (cl_train_pred == None):
-                cl_train_pred = model(cl_train_data.to(device))
-            else:
-                temp_cl_train_pred = model(cl_train_data.to(device))
-                cl_train_pred += temp_cl_train_pred
-            # Ensure training labels have the same shape as predictions
-            if cl_train_labels.dim() == 1:
-                cl_train_labels = cl_train_labels.unsqueeze(1)
-            total_train_loss += loss_fn(cl_train_pred, cl_train_labels.to(device))
-
-            cl_test_pred = model(cl_test_data.to(device))
-            # Ensure test labels have the same shape as predictions
-            if cl_test_labels.dim() == 1:
-                cl_test_labels = cl_test_labels.unsqueeze(1)
-            total_test_loss = loss_fn(cl_test_pred, cl_test_labels.to(device))
-            
-        test_r2 = get_r2_score(cl_test_pred, cl_test_labels)
-        val_r2 = get_r2_score(cl_val_pred, cl_val_labels)
-        train_r2 = get_r2_score(cl_train_pred, cl_train_labels)
-
-        print(f"CL Test -- Loss {total_test_loss}, R2: {test_r2}")
-        print(f"Cell Line Validation -- Raw Loss: {total_val_loss}, R2: {val_r2}")
-        print(f"Cell Line Train -- Raw Loss: {total_train_loss}, R2: {train_r2}")
-        sys.stdout.flush()
-        return val_r2, test_r2
 
     def copy_best_model(self, trial, trial_value, src, dest):
         if (os.path.exists(dest)):

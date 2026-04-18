@@ -27,7 +27,6 @@ os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "2")
 
 DEFAULT_PATIENCE = 20
-VAL_IMPROVEMENT_EPS = 1e-4
 MAX_EPOCHS = 500
 
 
@@ -324,8 +323,6 @@ class OptunaeNestTrainer:
 
             min_loss: Optional[torch.Tensor] = None
             counter = 0
-            best_val_r2 = float('-inf')
-            best_val_r2_epoch = -1
             val_loss = torch.tensor(float('inf'), device=self.device)
 
             training_start_time = time.time()
@@ -367,28 +364,22 @@ class OptunaeNestTrainer:
                     new_val_loss = loss_fn(cl_val_pred, cl_val_labels)
                     
                     trial.report(new_val_loss.item(), epoch)
-                    
-                    # Save best model and patience counter
-                    if min_loss is None:
-                        min_loss = new_val_loss
-                        torch.save(model.state_dict(), trial_dir / "model_best.pt")
-                    elif (min_loss - new_val_loss).item() > VAL_IMPROVEMENT_EPS:
+
+                    # Save best model based on validation loss (delta threshold 1e-4).
+                    # First epoch always saves; subsequent epochs save only on a strict improvement.
+                    if min_loss is None or (min_loss - new_val_loss).item() > 1e-4:
                         min_loss = new_val_loss
                         torch.save(model.state_dict(), trial_dir / "model_best.pt")
                         print(f"Model saved at epoch {epoch}")
-                    
-                    if val_r2 > best_val_r2:
-                        best_val_r2 = val_r2
-                        best_val_r2_epoch = epoch
-                    
-                    if (val_loss - new_val_loss).item() < VAL_IMPROVEMENT_EPS:
+
+                    if (val_loss - new_val_loss).item() < 1e-4:
                         counter += 1
                         if counter >= self.patience:
                             break
                     else:
                         val_loss = new_val_loss
                         counter = 0
-                    
+
                     if trial.should_prune():
                         print(f"Trial {trial.number} pruned at epoch {epoch}")
                         raise optuna.exceptions.TrialPruned()
@@ -434,7 +425,6 @@ class OptunaeNestTrainer:
             final_test_r2 = test_metrics["r2_score"]
             print(f"Cell Line Test -- Loss {test_metrics['loss']:.6f}, R²: {final_test_r2:.4f}")
             print(f"Cell Line Validation -- Loss {val_metrics['loss']:.6f}, R²: {final_val_r2:.4f}")
-            print(f"Best Val R2: {best_val_r2:.4f}=={final_val_r2:.4f} from Epoch {best_val_r2_epoch} | Test R2: {final_test_r2:.4f}")
             print(f"---------- Trial {trial.number} complete after {epoch} epochs ----------")
             sys.stdout.flush()
 

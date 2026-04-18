@@ -24,7 +24,6 @@ Usage:
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from copy import deepcopy
 
 import argparse
 import json
@@ -57,7 +56,6 @@ os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "2")
 
 DEFAULT_PATIENCE = 20
-VAL_IMPROVEMENT_EPS = 1e-4
 MAX_EPOCHS = 500
 
 
@@ -675,11 +673,7 @@ class OptunaNestVNNTrainer:
             optimizer.zero_grad()
 
             min_loss = None
-            best_model_state = None
             counter = 0
-            best_val_r2 = float('-inf')
-            best_val_r2_epoch = -1
-            delta = 0.001  # Matches original args.delta default
 
             epoch_start_time = time.time()
             training_start_time = time.time()
@@ -782,10 +776,8 @@ class OptunaNestVNNTrainer:
                 if val_label_gpu is None:
                     print(f"Warning: No validation data in epoch {epoch}, skipping validation...")
                     val_corr = 0.0
-                    val_r2 = -1000.0
                 else:
                     val_corr = util.pearson_corr(val_predict, val_label_gpu)
-                    val_r2 = get_r2_score(val_predict, val_label_gpu)
                 
                 # Print epoch stats (matches original format)
                 epoch_end_time = time.time()
@@ -801,17 +793,10 @@ class OptunaNestVNNTrainer:
                 # Report to Optuna
                 trial.report(val_loss.item() if torch.is_tensor(val_loss) else val_loss, epoch)
                 
-                # Save best model (matches original logic with delta threshold)
-                # Original NeST VNN saves when: min_loss - val_loss > delta
-                if min_loss is None:
+                # Save best model based on validation loss (delta threshold 1e-4).
+                # First epoch always saves; subsequent epochs save only on a strict improvement.
+                if min_loss is None or (min_loss - val_loss).item() > 1e-4:
                     min_loss = val_loss
-                    best_model_state = deepcopy(model.state_dict())
-                    torch.save(model.state_dict(), trial_dir / "model_best.pt")
-                    print(f"Model saved at epoch {epoch}")
-                    counter = 0  # Reset counter on improvement
-                elif (min_loss - val_loss).item() > delta:
-                    min_loss = val_loss
-                    best_model_state = deepcopy(model.state_dict())
                     torch.save(model.state_dict(), trial_dir / "model_best.pt")
                     print(f"Model saved at epoch {epoch}")
                     counter = 0  # Reset counter on improvement
@@ -822,11 +807,7 @@ class OptunaNestVNNTrainer:
                     if counter >= self.patience:
                         print(f"Early stopping at epoch {epoch} (no improvement for {self.patience} epochs)")
                         break
-                
-                if val_r2 > best_val_r2:
-                    best_val_r2 = val_r2
-                    best_val_r2_epoch = epoch
-                
+
                 # Check if trial should be pruned
                 if trial.should_prune():
                     print(f"Trial {trial.number} pruned at epoch {epoch}\n")
@@ -838,14 +819,9 @@ class OptunaNestVNNTrainer:
             print(f"Total training time: {total_training_time:.1f}s ({total_training_time/60:.1f} min)")
             sys.stdout.flush()
 
-            # Load best model for final evaluation (matches original)
-            if best_model_state is not None:
-                print("\nLoading best model for final evaluation...")
-                model.load_state_dict(best_model_state)
-                torch.save(model.state_dict(), trial_dir / "model_final.pt")
-                print("Best model saved as model_final.pt")
-            else:
-                print("\nNo best model found, using final model...")
+            # Load the best checkpoint from disk for final evaluation
+            print("\nLoading best model from saved checkpoint...")
+            model.load_state_dict(torch.load(trial_dir / "model_best.pt", map_location=f"cuda:{self.args.cuda}"))
 
             # Evaluate on validation data (matches original)
             print("\nEvaluating best model on validation data...")
@@ -887,7 +863,6 @@ class OptunaNestVNNTrainer:
             print(f"Test R² Score: {test_metrics['r2_score']:.4f}")
             print("=" * 60)
             
-            print(f"Best Val R2: {best_val_r2:.4f}=={final_val_r2:.4f} from Epoch {best_val_r2_epoch} | Test R2: {final_test_r2:.4f}")
             print(f"---------- Trial {trial.number} complete after {epoch + 1} epochs ----------")
             print(f"Val R²: {final_val_r2:.4f}, Test R²: {final_test_r2:.4f}\n")
             sys.stdout.flush()
