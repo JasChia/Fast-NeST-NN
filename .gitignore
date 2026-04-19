@@ -17,6 +17,7 @@ ArchitecturePerformanceExperiments/**/*.pyc
 # Job lists under ArchitecturePerformanceExperiments/*/jobs/ are tracked (relative paths to <repo>/Data).
 
 # Local scratch / smoke output dirs (not for commit)
+scripts/verify.log
 Profiling/VERIFY_SMOKE_results/
 ArchitecturePerformanceExperiments/**/VERIFY_SMOKE/
 NeSTVNNShuffleAnalysis/**/VERIFY_SMOKE/
