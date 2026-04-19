@@ -11,6 +11,8 @@
 #
 
 # Job 1
+
+# Job 1
 python -u src/train.py -onto ../Data/red_ontology.txt -gene2id ../Data/red_gene2ind.txt -cell2id ../Data/nest_shuffle_data/CombatLog2TPM/Drug5/D5_CL/D5_cell2ind.txt -transcriptomic ../Data/nest_shuffle_data/CombatLog2TPM/Drug5/D5_CL/D5_GE_Data.txt -train ../Data/nest_shuffle_data/CombatLog2TPM/Drug5/D5_CL/train_test_splits/experiment_0/training_data.txt -test ../Data/nest_shuffle_data/CombatLog2TPM/Drug5/D5_CL/train_test_splits/experiment_0/test_data.txt -modeldir nest_vnn_logs/D5_unshuffled_exp_0 -genotype_hiddens 4 -epoch 250 -batchsize 8 -seed 42 > D5_unshuffled_exp_0.log
 
 # Job 2

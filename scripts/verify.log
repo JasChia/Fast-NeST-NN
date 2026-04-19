@@ -1,0 +1,403 @@
+==========================================
+Fast-NeST-NN local checks
+Repo: /nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN
+==========================================
+
+== Python syntax: ArchitecturePerformanceExperiments *_hparam_tuner.py ==
+OK: py_compile tuners
+
+== Python syntax: NeSTVNNShuffleAnalysis/nest_vnn/src (training stack) ==
+OK: py_compile NeST-VNN shuffle src
+
+== Python syntax: NeSTVNNShuffleAnalysis shuffle_assignment_analysis ==
+OK: py_compile analyze_shuffle_assignments
+
+== Import check: optional aggregation dependencies (conda env) ==
+OK: pandas/numpy/scipy/statsmodels
+
+== fNeST-NN: 2 Optuna trials, 10 epochs (writes under fNeST-NN/results/; gitignored) ==
+Using device: cuda:0
+Random seed set to: 0
+Created output directory: /nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/ArchitecturePerformanceExperiments/fNeST-NN/results/VERIFY_SMOKE/D298_smoke
+=== DATA LOADING DEBUG ===
+Initializing data loading...
+Total number of cell lines = 708
+Trial 0: h=4, lr=8.66e-04, drop=0.30, act=Tanh, batch_size=32, output=linearTrial 1: h=4, lr=5.98e-03, drop=0.00, act=Tanh, batch_size=4, output=linearStudy statistics:
+Number of finished trials: 2
+Number of pruned trials: 0
+Number of complete trials: 2
+Best trial:
+Value: 0.3788846731185913
+
+BEST PARAMS:
+wd_bool: True
+wd: 0.0023723300729921923
+l1_bool: False
+lr: 0.0059812219011525555
+dropout_fraction: 0.0
+batch_size_power: 2
+activation: Tanh
+output_method: linear
+ALL COMPLETE
+Results saved to: /nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/ArchitecturePerformanceExperiments/fNeST-NN/results/VERIFY_SMOKE/D298_smoke
+Best Validation R²: 0.378885
+Best Test R²: 0.194059
+OK: fNeST-NN smoke — /nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/ArchitecturePerformanceExperiments/fNeST-NN/results/VERIFY_SMOKE/D298_smoke
+
+== Profiling: CPU, 2 timing runs (output under Profiling/; gitignored) ==
+========================================
+Network Performance Profiling
+========================================
+CUDA Device: None
+Number of runs: 2
+Nodes per assembly: 4
+Output directory: VERIFY_SMOKE_results
+
+Running command: python profile_networks.py --num-runs 2 --min-npa 4 --max-npa 4 --output-dir VERIFY_SMOKE_results
+
+
+================================================================================
+Network Performance Profiling - Multi-NPA Mode
+================================================================================
+Configuration:
+  - Device: CPU
+  - Batch sizes: [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+  - Nodes per assembly: [4]
+  - Runs per configuration: 2
+  - Output directory: VERIFY_SMOKE_results
+  - NeST data directory: /nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/Data
+
+################################################################################
+# NODES PER ASSEMBLY: 4
+################################################################################
+
+================================================================================
+Profiling eNest
+================================================================================
+Initializing eNest...
+Model initialized. Starting profiling across 13 batch sizes...
+
+  Batch size: 2
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  8.333 ± 0.040 ms
+    Training: 33.191 ± 0.246 ms
+
+  Batch size: 4
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  9.998 ± 0.042 ms
+    Training: 32.390 ± 0.035 ms
+
+  Batch size: 8
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  9.823 ± 0.012 ms
+    Training: 33.310 ± 0.388 ms
+
+  Batch size: 16
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  12.927 ± 0.034 ms
+    Training: 38.045 ± 0.547 ms
+
+  Batch size: 32
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  14.693 ± 0.014 ms
+    Training: 40.141 ± 0.964 ms
+
+  Batch size: 64
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  15.246 ± 0.088 ms
+    Training: 44.204 ± 0.542 ms
+
+  Batch size: 128
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  18.537 ± 0.059 ms
+    Training: 54.441 ± 0.512 ms
+
+  Batch size: 256
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  28.115 ± 0.017 ms
+    Training: 81.462 ± 1.662 ms
+
+  Batch size: 512
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  43.189 ± 0.050 ms
+    Training: 120.379 ± 0.105 ms
+
+  Batch size: 1024
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  67.831 ± 0.184 ms
+    Training: 202.944 ± 0.864 ms
+
+  Batch size: 2048
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  131.237 ± 0.156 ms
+    Training: 381.313 ± 2.497 ms
+
+  Batch size: 4096
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  259.764 ± 0.001 ms
+    Training: 719.907 ± 2.588 ms
+
+  Batch size: 8192
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  521.886 ± 0.720 ms
+    Training: 1551.569 ± 22.854 ms
+
+Raw results saved to: VERIFY_SMOKE_results/npa_4/eNest_raw_times.json
+
+================================================================================
+Profiling DrugCellNN
+================================================================================
+Initializing DrugCellNN...
+Total number of genes = 689
+There are 1 roots: NEST
+There are 131 terms
+There are 1 connected componenets
+Initialized DummyDataWrapper:
+  - Number of genes: 689
+  - Number of terms: 131
+  - Root term: NEST
+  - Nodes per assembly (num_hiddens_genotype): 4
+Model initialized. Starting profiling across 13 batch sizes...
+
+  Batch size: 2
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  77.391 ± 0.019 ms
+    Training: 317.560 ± 0.644 ms
+
+  Batch size: 4
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  80.020 ± 0.363 ms
+    Training: 262.780 ± 15.993 ms
+
+  Batch size: 8
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  63.968 ± 0.202 ms
+    Training: 252.282 ± 2.325 ms
+
+  Batch size: 16
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  69.691 ± 0.043 ms
+    Training: 269.382 ± 0.061 ms
+
+  Batch size: 32
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  71.845 ± 0.226 ms
+    Training: 289.841 ± 0.149 ms
+
+  Batch size: 64
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  72.892 ± 0.128 ms
+    Training: 302.418 ± 0.377 ms
+
+  Batch size: 128
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  74.619 ± 0.389 ms
+    Training: 326.423 ± 2.494 ms
+
+  Batch size: 256
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  82.463 ± 0.108 ms
+    Training: 378.953 ± 1.988 ms
+
+  Batch size: 512
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  93.925 ± 1.003 ms
+    Training: 438.242 ± 3.729 ms
+
+  Batch size: 1024
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  113.931 ± 0.185 ms
+    Training: 529.287 ± 0.162 ms
+
+  Batch size: 2048
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  155.591 ± 0.852 ms
+    Training: 719.191 ± 0.863 ms
+
+  Batch size: 4096
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  205.660 ± 0.899 ms
+    Training: 1105.691 ± 14.671 ms
+
+  Batch size: 8192
+    Timing forward pass (2 runs)...
+    Timing training iteration (2 runs)...
+    Forward:  336.606 ± 1.156 ms
+    Training: 1958.016 ± 11.710 ms
+
+Raw results saved to: VERIFY_SMOKE_results/npa_4/DrugCellNN_raw_times.json
+
+================================================================================
+Computing Statistics
+================================================================================
+
+Batch Size: 2
+  Forward Pass (inference):
+    eNest:      8.333 ± 0.040 ms
+    DrugCellNN: 77.391 ± 0.019 ms
+    Ratio (DC/eN): 9.287x
+  Training Iteration (forward + loss + backward):
+    eNest:      33.191 ± 0.246 ms
+    DrugCellNN: 317.560 ± 0.644 ms
+    Ratio (DC/eN): 9.568x
+
+Batch Size: 4
+  Forward Pass (inference):
+    eNest:      9.998 ± 0.042 ms
+    DrugCellNN: 80.020 ± 0.363 ms
+    Ratio (DC/eN): 8.004x
+  Training Iteration (forward + loss + backward):
+    eNest:      32.390 ± 0.035 ms
+    DrugCellNN: 262.780 ± 15.993 ms
+    Ratio (DC/eN): 8.113x
+
+Batch Size: 8
+  Forward Pass (inference):
+    eNest:      9.823 ± 0.012 ms
+    DrugCellNN: 63.968 ± 0.202 ms
+    Ratio (DC/eN): 6.512x
+  Training Iteration (forward + loss + backward):
+    eNest:      33.310 ± 0.388 ms
+    DrugCellNN: 252.282 ± 2.325 ms
+    Ratio (DC/eN): 7.574x
+
+Batch Size: 16
+  Forward Pass (inference):
+    eNest:      12.927 ± 0.034 ms
+    DrugCellNN: 69.691 ± 0.043 ms
+    Ratio (DC/eN): 5.391x
+  Training Iteration (forward + loss + backward):
+    eNest:      38.045 ± 0.547 ms
+    DrugCellNN: 269.382 ± 0.061 ms
+    Ratio (DC/eN): 7.081x
+
+Batch Size: 32
+  Forward Pass (inference):
+    eNest:      14.693 ± 0.014 ms
+    DrugCellNN: 71.845 ± 0.226 ms
+    Ratio (DC/eN): 4.890x
+  Training Iteration (forward + loss + backward):
+    eNest:      40.141 ± 0.964 ms
+    DrugCellNN: 289.841 ± 0.149 ms
+    Ratio (DC/eN): 7.221x
+
+Batch Size: 64
+  Forward Pass (inference):
+    eNest:      15.246 ± 0.088 ms
+    DrugCellNN: 72.892 ± 0.128 ms
+    Ratio (DC/eN): 4.781x
+  Training Iteration (forward + loss + backward):
+    eNest:      44.204 ± 0.542 ms
+    DrugCellNN: 302.418 ± 0.377 ms
+    Ratio (DC/eN): 6.841x
+
+Batch Size: 128
+  Forward Pass (inference):
+    eNest:      18.537 ± 0.059 ms
+    DrugCellNN: 74.619 ± 0.389 ms
+    Ratio (DC/eN): 4.025x
+  Training Iteration (forward + loss + backward):
+    eNest:      54.441 ± 0.512 ms
+    DrugCellNN: 326.423 ± 2.494 ms
+    Ratio (DC/eN): 5.996x
+
+Batch Size: 256
+  Forward Pass (inference):
+    eNest:      28.115 ± 0.017 ms
+    DrugCellNN: 82.463 ± 0.108 ms
+    Ratio (DC/eN): 2.933x
+  Training Iteration (forward + loss + backward):
+    eNest:      81.462 ± 1.662 ms
+    DrugCellNN: 378.953 ± 1.988 ms
+    Ratio (DC/eN): 4.652x
+
+Batch Size: 512
+  Forward Pass (inference):
+    eNest:      43.189 ± 0.050 ms
+    DrugCellNN: 93.925 ± 1.003 ms
+    Ratio (DC/eN): 2.175x
+  Training Iteration (forward + loss + backward):
+    eNest:      120.379 ± 0.105 ms
+    DrugCellNN: 438.242 ± 3.729 ms
+    Ratio (DC/eN): 3.641x
+
+Batch Size: 1024
+  Forward Pass (inference):
+    eNest:      67.831 ± 0.184 ms
+    DrugCellNN: 113.931 ± 0.185 ms
+    Ratio (DC/eN): 1.680x
+  Training Iteration (forward + loss + backward):
+    eNest:      202.944 ± 0.864 ms
+    DrugCellNN: 529.287 ± 0.162 ms
+    Ratio (DC/eN): 2.608x
+
+Batch Size: 2048
+  Forward Pass (inference):
+    eNest:      131.237 ± 0.156 ms
+    DrugCellNN: 155.591 ± 0.852 ms
+    Ratio (DC/eN): 1.186x
+  Training Iteration (forward + loss + backward):
+    eNest:      381.313 ± 2.497 ms
+    DrugCellNN: 719.191 ± 0.863 ms
+    Ratio (DC/eN): 1.886x
+
+Batch Size: 4096
+  Forward Pass (inference):
+    eNest:      259.764 ± 0.001 ms
+    DrugCellNN: 205.660 ± 0.899 ms
+    Ratio (DC/eN): 0.792x
+  Training Iteration (forward + loss + backward):
+    eNest:      719.907 ± 2.588 ms
+    DrugCellNN: 1105.691 ± 14.671 ms
+    Ratio (DC/eN): 1.536x
+
+Batch Size: 8192
+  Forward Pass (inference):
+    eNest:      521.886 ± 0.720 ms
+    DrugCellNN: 336.606 ± 1.156 ms
+    Ratio (DC/eN): 0.645x
+  Training Iteration (forward + loss + backward):
+    eNest:      1551.569 ± 22.854 ms
+    DrugCellNN: 1958.016 ± 11.710 ms
+    Ratio (DC/eN): 1.262x
+
+Summary statistics saved to: VERIFY_SMOKE_results/npa_4/summary_statistics.csv
+Paper figure (speedup_fnest_vs_nest_vnn_bar.png) saved to: VERIFY_SMOKE_results/npa_4/speedup_fnest_vs_nest_vnn_bar.png
+
+Results for NPA=4 saved to: VERIFY_SMOKE_results/npa_4/
+  (Main paper figure: VERIFY_SMOKE_results/npa_4/speedup_fnest_vs_nest_vnn_bar.png)
+
+================================================================================
+Profiling Complete!
+================================================================================
+Results saved under: VERIFY_SMOKE_results/ (per-NPA subdirectories only)
+
+Profiling complete! Results saved to: VERIFY_SMOKE_results/
+OK: Profiling smoke — /nfs/ml_lab/projects/Pilot1_PreclinicalHPC/jchia_backup/jchia_l05_7-31-25/Fast-NeST-NN/Profiling/VERIFY_SMOKE_results
+
+Local checks finished successfully.
