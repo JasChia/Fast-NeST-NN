@@ -4,19 +4,19 @@ Data/
 nohup.out
 .nfs*
 
-# Scheduler experiment outputs (multi-TB on disk; not suitable for Git/Git LFS).
-# The rest of `scheduler/` (code, configs, READMEs) is tracked.
-scheduler/**/results/
-scheduler/**/long_results/
-scheduler/**/logs/
-scheduler/**/shared/
-scheduler/__pycache__/
-scheduler/**/__pycache__/
-scheduler/**/*.pyc
+# Architecture performance experiment outputs (multi-TB on disk; not suitable for Git/Git LFS).
+# The rest of `ArchitecturePerformanceExperiments/` (code, configs, READMEs) is tracked.
+ArchitecturePerformanceExperiments/**/results/
+ArchitecturePerformanceExperiments/**/long_results/
+ArchitecturePerformanceExperiments/**/logs/
+ArchitecturePerformanceExperiments/**/shared/
+ArchitecturePerformanceExperiments/__pycache__/
+ArchitecturePerformanceExperiments/**/__pycache__/
+ArchitecturePerformanceExperiments/**/*.pyc
 
-# Job lists under scheduler/*/jobs/ are tracked (relative paths to <repo>/Data).
+# Job lists under ArchitecturePerformanceExperiments/*/jobs/ are tracked (relative paths to <repo>/Data).
 
-# Local smoke / verification outputs (see scripts/verify_repo.sh)
+# Local scratch / smoke output dirs (not for commit)
 Profiling/VERIFY_SMOKE_results/
-scheduler/**/VERIFY_SMOKE/
-nohup.out
+ArchitecturePerformanceExperiments/**/VERIFY_SMOKE/
+NeSTVNNShuffleAnalysis/**/VERIFY_SMOKE/

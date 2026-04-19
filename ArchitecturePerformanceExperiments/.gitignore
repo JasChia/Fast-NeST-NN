@@ -1,0 +1,8 @@
+*/results
+*/logs
+*/shared
+*/__pycache__
+logs
+results
+__pycache__
+*/jobs/*.json

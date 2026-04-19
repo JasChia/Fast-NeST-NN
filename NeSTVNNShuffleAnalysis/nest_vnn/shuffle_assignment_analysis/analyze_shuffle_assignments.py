@@ -452,8 +452,8 @@ def _default_data_base_path():
 	return str((Path(__file__).resolve().parent.parent.parent / "Data"))
 
 
-# Drug IDs used in the NeST-VNN shuffle experiments (12 drugs × 50 runs)
-DRUG_IDS = [5, 57, 80, 99, 127, 151, 188, 201, 244, 273, 298, 380]
+# Drug IDs used in the NeST-VNN shuffle experiments (10 drugs × 50 runs)
+DRUG_IDS = [5, 80, 99, 127, 151, 188, 201, 244, 273, 298]
 EXPERIMENTS_PER_DRUG = 50
 
 

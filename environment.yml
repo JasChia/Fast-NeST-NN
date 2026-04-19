@@ -1,4 +1,4 @@
-# Minimal conda environment for Fast-NeST-NN (paper + scheduler + Profiling).
+# Minimal conda environment for Fast-NeST-NN (paper + ArchitecturePerformanceExperiments + Profiling).
 # Mirrors the intent of cuda11_env: PyTorch with CUDA 11.x, Optuna, scientific stack.
 #
 # Create (recommended):

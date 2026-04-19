@@ -18,8 +18,6 @@ conda activate fast-nest-nn
 
 Alternatively: **`pip install -r requirements.txt`** in **`Profiling/`**, then install PyTorch for your platform from [pytorch.org](https://pytorch.org/get-started/locally/).
 
-**Smoke test:** from the repo root, **`bash scripts/verify_repo.sh`** runs **`./run_profiling.sh --cpu --num-runs 2`** and writes **`Profiling/VERIFY_SMOKE_results/`** (gitignored).
-
 ---
 
 ## Quick start (from a fresh clone)
@@ -72,24 +70,7 @@ python profile_networks.py --data-dir /path/to/dir ...
 
 ---
 
-## 2. Python environment
-
-Install **`Profiling/requirements.txt`**, then install **PyTorch** for your platform ([pytorch.org](https://pytorch.org/get-started/locally/)).
-
-| Package        | Role |
-|----------------|------|
-| `numpy`        | Arrays, statistics |
-| `pandas`       | Summary CSV |
-| `torch`        | Models and timing |
-| `matplotlib`   | Plots (Agg backend) |
-| `tqdm`         | Progress bars |
-| `networkx`     | Ontology graphs |
-| `scikit-learn` | Imported by vendored `helpers/util.py` |
-| `scipy`        | Imported by vendored `helpers/util.py` |
-
----
-
-## 3. What is in `helpers/`
+## 2. What is in `helpers/`
 
 | File | Role |
 |------|------|
@@ -101,22 +82,21 @@ Install **`Profiling/requirements.txt`**, then install **PyTorch** for your plat
 
 ---
 
-## 4. How to run
+## 3. How to run
 
 Run from **`Profiling/`** so `import helpers` works (the script also adds its directory to `sys.path`).
 
-### 4.1 From repository root
+### 3.1 From repository root
 
 ```bash
 cd /path/to/Fast-NeST-NN
 python Profiling/profile_networks.py --num-runs 100 --min-npa 4 --max-npa 4 --output-dir Profiling/profiling_results
 ```
 
-### 4.2 From `Profiling/`
+### 3.2 From `Profiling/`
 
 ```bash
 cd /path/to/Fast-NeST-NN/Profiling
-chmod +x run_profiling.sh   # once, if needed
 ./run_profiling.sh --cuda 0 --num-runs 100 --nodes-per-assembly 4 --output-dir profiling_results
 ./run_profiling.sh ... --data-dir /custom/path/to/ontology   # optional
 ```
@@ -124,7 +104,7 @@ chmod +x run_profiling.sh   # once, if needed
 - `--nodes-per-assembly N` sets both `--min-npa` and `--max-npa` to `N`.
 - `--cpu` runs on CPU (no `--cuda` passed through).
 
-### 4.3 Full CLI (`profile_networks.py`)
+### 3.3 Full CLI (`profile_networks.py`)
 
 | Argument | Meaning |
 |----------|---------|
@@ -139,7 +119,7 @@ Defaults: `--min-npa 4`, `--max-npa 4` if unspecified.
 
 ---
 
-## 5. Expected outputs
+## 4. Expected outputs
 
 Under **`--output-dir`**, only **`npa_<n>/`** subdirectories are created.
 
@@ -149,20 +129,3 @@ Under **`--output-dir`**, only **`npa_<n>/`** subdirectories are created.
 | `DrugCellNN_raw_times.json` | Same for DrugCellNN. |
 | `summary_statistics.csv` | Means/stds (ms), ratios. |
 | **`speedup_fnest_vs_nest_vnn_bar.png`** | **Main paper figure** (paired bars). |
-
----
-
-## 6. Troubleshooting
-
-- **`ModuleNotFoundError: No module named 'helpers'`** — Run with `cd Profiling` or `python Profiling/profile_networks.py` from the repo root; do not run the file from outside without adjusting `PYTHONPATH=Profiling`.
-- **Missing ontology files** — Place files in `Data/` or set `FNEST_ONTOLOGY_DIR` / `--data-dir`.
-- **`torch._six`** — Handled in `helpers/util.py` for newer PyTorch.
-
----
-
-## 7. Import check
-
-```bash
-cd Profiling
-python -c "from helpers.nest_data_paths import resolve_nest_data_dir; from helpers.eNest import eNest; print('data:', resolve_nest_data_dir())"
-```

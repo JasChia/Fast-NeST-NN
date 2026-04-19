@@ -6,5 +6,5 @@ Source snapshots (for provenance):
 - drugcell_nn, training_data_wrapper, util: vendored from nest_vnn ``src/`` (historical snapshot)
 - nest_data_paths: resolves ``<repo>/Data`` or ``FNEST_ONTOLOGY_DIR`` for ontology files
 
-Imports in this package use relative paths so profiling does not depend on scheduler/ or external nest_vnn paths.
+Imports in this package use relative paths so profiling does not depend on ArchitecturePerformanceExperiments/ or external nest_vnn paths.
 """
