@@ -21,3 +21,5 @@ scripts/verify.log
 Profiling/VERIFY_SMOKE_results/
 ArchitecturePerformanceExperiments/**/VERIFY_SMOKE/
 NeSTVNNShuffleAnalysis/**/VERIFY_SMOKE/
+
+scripts/
