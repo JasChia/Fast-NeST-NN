@@ -8,7 +8,7 @@ This work complements a submission to **ICIBM 2026**.
 
 ## Python environment
 
-A **minimal Conda spec** (PyTorch + CUDA 11.x stack, Optuna, NumPy/Pandas/SciPy, `torchmetrics`, Profiling deps) lives in **`environment.yml`** at the repo root.
+A **minimal Conda spec** lives in **`environment.yml`** at the repo root.
 
 ```bash
 cd /path/to/Fast-NeST-NN
@@ -40,7 +40,7 @@ The `Data/` directory at the repo root is listed in `.gitignore` so large local 
 
 ### `Data_archives/` (in Git, LFS)
 
-Per-dataset archives are stored as `*.tar.gz` files (Git LFS). Extract at the repository root:
+Per-drug dataset archives are stored as `*.tar.gz` files (Git LFS). This is the exact data utilized for all experiments. Extract at the repository root:
 
 ```bash
 tar -xzf Data_archives/<name>.tar.gz
