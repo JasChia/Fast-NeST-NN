@@ -2,8 +2,6 @@
 
 **Shared conventions:** **[`../README.md`](../README.md)** (data, jobs).
 
-**Note:** Sections further down may mention **`generate_jobs.py`** / queue helpers. Those files are **not** in this repository; use bundled **`jobs/`** and **`ERK_SNN_hparam_tuner.py`** only.
-
 ## Running bundled jobs (this repository)
 
 Use **`jobs/ERK_SNN_jobs.txt`** from **`ArchitecturePerformanceExperiments/ERK_SNN/`** (one shell command per line; skip `#` comments). Paths use **`../../Data/...`** relative to this directory. Run lines with your cluster scheduler (Slurm, GNU Parallel, etc.).
@@ -83,17 +81,9 @@ Each experiment maintains reproducibility through:
 
 ## System Architecture
 
-### Component Overview
-
-The system consists of these main components:
-
-1. **`jobs/ERK_SNN_jobs.txt`**: Bundled shell commands for all experiments (regenerate locally if needed).
-2. **`ERK_SNN_hparam_tuner.py`**: Performs hyperparameter optimization for a single experiment.
-3. **`ERK_SNN.py`**: Defines the ERK_SNN model architecture with ERK initialization.
-
 ### Workflow
 
-Bundled commands live in **`jobs/ERK_SNN_jobs.txt`** and **`jobs/ERK_SNN_advanced_jobs.json`**. Each line invokes **`ERK_SNN_hparam_tuner.py`** with paths under **`../../Data/`** (see repository root `README.md`). Run those lines with your cluster scheduler (Slurm, GNU Parallel, etc.). Outputs land under **`results/`**.
+Bundled commands live in **`jobs/ERK_SNN_jobs.txt`**. Each line invokes **`ERK_SNN_hparam_tuner.py`** with paths under **`../../Data/`** (see repository root `README.md`). Run those lines with your cluster scheduler (Slurm, GNU Parallel, etc.). Outputs land under **`results/`**.
 
 ## Usage Instructions
 
@@ -144,13 +134,12 @@ ERK_SNN/
 ├── ERK_SNN.py                      # ERK_SNN model definition
 ├── jobs/                           # Bundled job command lists
 │   ├── ERK_SNN_jobs.txt
-│   └── ERK_SNN_advanced_jobs.json
 ├── logs/                           # Log files (when you run experiments)
 └── results/                        # Experiment results
     └── D{drug}/                    # Per-drug directory
         └── D{drug}_{experiment}/    # Per-experiment directory
             ├── D{drug}_{experiment}.log
-            ├── Sparse_NN_HTune.log
+            ├── ERK_SNN_HTune.log
             ├── study_summary.txt
             └── trials/              # Optuna trial results
                 └── trial_{n}/
@@ -225,31 +214,7 @@ Optuna explores the following hyperparameter space:
 - **Gradient Clipping**: Max norm of 1.0 to prevent gradient explosion
 - **Device**: CUDA (GPU) if available, CPU otherwise
 
-### GPU Queue Manager Features
-
-The `advanced_gpu_queue.py` script provides:
-
-1. **Automatic GPU Detection**: Finds available GPUs using `nvidia-smi`
-2. **GPU Allocation**: Assigns jobs to available GPUs
-3. **Process Management**: Tracks running jobs and handles failures
-4. **Retry Logic**: Automatically retries failed jobs (up to `max_retries`)
-5. **Priority Queue**: Jobs can be prioritized (currently all set to priority 5)
-6. **Logging**: Comprehensive logging of job status and execution
-7. **Graceful Shutdown**: Handles SIGINT/SIGTERM signals to clean up running jobs
-
 ## Verification
-
-### Verify Job Generation
-
-After running `generate_jobs.py`, verify:
-
-```bash
-# Check job count
-grep -c "^python" jobs/r_sparse_nn_jobs.txt  # Should be 600
-
-# Check JSON structure
-python -c "import json; data=json.load(open('jobs/r_sparse_nn_advanced_jobs.json')); print(f'Total jobs: {data[\"total_jobs\"]}')"
-```
 
 ### Verify Experiment Structure
 
@@ -264,76 +229,6 @@ The sparse network should have:
 - Exact edge counts matching `nest_edges_by_layer`
 - All nodes "alive" (at least one input and one output connection)
 - Pruning masks maintained during training (via `torch.prune`)
-
-## Troubleshooting
-
-### Common Issues
-
-1. **GPU Not Available**: Check `nvidia-smi` and ensure CUDA is properly configured
-2. **Out of Memory**: Reduce `--max-gpus` or batch size in hyperparameter space
-3. **Job Failures**: Check individual experiment logs in `results/D{drug}/D{drug}_{experiment}/`
-4. **Queue Manager Stops**: Check `logs/gpu_queue_manager.log` for errors
-
-### Checking Job Status
-
-```bash
-# View queue manager status
-tail -f logs/gpu_queue_manager.log
-
-# Check running processes
-ps aux | grep r_sparse_nn_hparam_tuner
-
-# Check GPU usage
-nvidia-smi
-
-# View recent experiment logs
-tail -f results/D5/D5_0/D5_0.log
-```
-
-## Code Verification
-
-The following code snippets verify key aspects of the methodology:
-
-### 50 Experiments Per Drug
-
-From `generate_jobs.py`:
-```python
-for drug in drugs:  # 10 drugs
-    for i in range(50):  # 50 experiments per drug
-        seed = i * 1000  # Unique seed per experiment
-        # ... creates job configuration
-```
-
-### Same Sparse Network Configuration
-
-From `r_sparse_nn_hparam_tuner.py`:
-```python
-# genotype_hiddens is fixed at 4 for all experiments
-self.genotype_hiddens = 4  # Fixed, not tuned
-```
-
-### Unique Seeds Per Experiment
-
-From `generate_jobs.py`:
-```python
-seed = i * 1000  # experiment 0: seed 0, experiment 1: seed 1000, etc.
-```
-
-From `r_sparse_nn_hparam_tuner.py`:
-```python
-trial_seed = trial.number + args.seed  # Each trial within experiment has unique seed
-```
-
-### Sparse Network Edge Counts
-
-From `sparse_nn.py`:
-```python
-self.nest_edges_by_layer = {
-    0: 1321 * self.genotype_hiddens,  # 5,284 edges (when genotype_hiddens=4)
-    1: 92 * self.genotype_hiddens * self.genotype_hiddens,  # 1,472 edges
-    # ... etc
-}
-```
 
 ## References
 

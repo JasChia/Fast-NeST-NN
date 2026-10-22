@@ -9,8 +9,6 @@
 - `dense_fnest_fc_nn.py` — model definition (`Dense_fNeST` class).
 - `dense_fnest_hparam_tuner.py` — Optuna training driver (run **from this directory**).
 - `jobs/dense_fnest_jobs.txt` — one training command per experiment (comments start with `#`).
-- `jobs/dense_fnest_advanced_jobs.json` — same jobs as JSON (optional for tooling).
-- `archived_no_linear_layer/` — archived variant without the linear readout experiment.
 
 ## Data
 

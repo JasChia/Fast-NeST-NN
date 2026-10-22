@@ -2,23 +2,7 @@
 
 **Shared conventions:** **[`../README.md`](../README.md)** (data, jobs).
 
-**Note:** Long sections below (system architecture, `generate_jobs.py`, GPU queue helpers) are **historical**. This repo ships **`jobs/*.txt`** / **`jobs/*.json`** and `*_hparam_tuner.py` only—see **Running bundled jobs** near the top.
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Methodology](#methodology)
-3. [System Architecture](#system-architecture)
-4. [File Structure and Coordination](#file-structure-and-coordination)
-5. [Usage Guide](#usage-guide)
-6. [Hyperparameter Tuning](#hyperparameter-tuning)
-7. [Job Management](#job-management)
-8. [Troubleshooting](#troubleshooting)
-
----
-
 ## Running bundled jobs (this repository)
-
-In-tree `generate_jobs.py` and GPU queue scripts are **not** shipped here. Use **`jobs/global_prune_nn_warmup_jobs.txt`** (one command per line; skip `#` comments) from **`ArchitecturePerformanceExperiments/GP-NN/`**. Paths assume **`Data/`** at the repo root (`../../Data/...`). Execute lines with Slurm, GNU Parallel, or your site’s job runner.
 
 ### Environment and CLI (current code)
 
@@ -197,40 +181,6 @@ The model includes a validation function `is_fully_pruned_to_target()` that chec
 
 ## System Architecture
 
-### Component Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Job Generation Layer                     │
-│  generate_jobs.py → Creates job files for experiments      │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Queue Management Layer                      │
-│  advanced_gpu_queue.py (single node)                        │
-│  distributed_gpu_queue.py (multi-node)                      │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Hyperparameter Tuning Layer                    │
-│  global_prune_nn_hparam_tuner.py                          │
-│  └─ Uses Optuna for hyperparameter search                  │
-│  └─ Calls GlobalPrunedFC_NN for each trial                  │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Model Implementation                       │
-│  global_prune_fc_nn.py                                       │
-│  └─ GlobalPrunedFC_NN class                                  │
-│  └─ Global pruning logic                                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
 ## File Structure and Coordination
 
 ### Core Files
@@ -287,110 +237,6 @@ The model includes a validation function `is_fully_pruned_to_target()` that chec
 
 ---
 
-#### 3. `generate_jobs.py`
-**Purpose**: Generates job files for batch processing
-
-**Key Functions**:
-- `generate_sparse_jobs()`: Creates text file with commands
-- `generate_sparse_jobs_json()`: Creates JSON file with metadata
-
-**Output Files**:
-- `jobs/global_prune_nn_jobs.txt`: Simple text format
-- `jobs/global_prune_nn_advanced_jobs.json`: JSON with metadata
-
-**Job Structure** (per experiment):
-- Drug ID (10 drugs: 5, 80, 99, 127, 151, 188, 244, 273, 298, 380)
-- Experiment ID (0-49, 50 experiments per drug)
-- Seed: `experiment_id * 1000`
-- Output directory: `results/D{drug}/D{drug}_{experiment_id}`
-
-**Dependencies**: None
-
-**Used By**: Users (run manually to generate jobs)
-
----
-
-#### 4. `advanced_gpu_queue.py`
-**Purpose**: Single-node GPU queue manager
-
-**Features**:
-- Monitors GPU availability
-- Queues and executes jobs sequentially
-- Handles output directory creation
-- Logs job status and results
-
-**Key Methods**:
-- `find_available_gpu()`: Finds next available GPU
-- `start_job()`: Starts job on specific GPU
-- `check_job_status()`: Monitors running jobs
-- `_create_experiment_directory()`: Creates output directories
-
-**Command Processing**:
-1. Extracts `-output_dir` from command
-2. Creates experiment directory
-3. Moves log file to experiment directory
-4. Adds `-cuda {gpu_id}` if not present
-5. Changes to `global_prune_nn` directory
-6. Executes with CUDA_VISIBLE_DEVICES set
-
-**Dependencies**: None (standalone)
-
-**Used By**: Users (run manually to process jobs)
-
----
-
-#### 5. `distributed_gpu_queue.py`
-**Purpose**: Multi-node distributed GPU queue manager
-
-**Features**:
-- File-based locking for distributed execution
-- Prevents duplicate job execution across nodes
-- Status tracking in shared filesystem
-- Node identification and coordination
-
-**Key Methods**:
-- `_acquire_job_lock()`: Acquires exclusive lock on job
-- `_is_job_completed()`: Checks if job already completed
-- `_is_job_running()`: Checks if job currently running
-- `_update_job_status()`: Updates job status atomically
-
-**Distributed Coordination**:
-- Uses `shared/locks/` for lock files
-- Uses `shared/status/` for status files
-- Each job has unique hash-based filename
-- Locks prevent concurrent execution
-
-**Dependencies**: None (standalone)
-
-**Used By**: Users (run on each node to process jobs)
-
----
-
-#### 6. `monitor_distributed_jobs.py`
-**Purpose**: Monitor job status across distributed system
-
-**Features**:
-- Shows job status summary (completed, running, failed)
-- Displays active locks and their age
-- Shows node activity and job distribution
-- Provides completion statistics and average job durations
-- Watch mode for continuous monitoring
-
-**Usage**:
-```bash
-# One-time status check
-python monitor_distributed_jobs.py --status-dir shared/status --lock-dir shared/locks
-
-# Watch mode (refreshes every 5 seconds)
-python monitor_distributed_jobs.py --status-dir shared/status --lock-dir shared/locks --watch
-```
-
-**Dependencies**: None (standalone)
-
-**Used By**: Users (run manually to check status)
-
----
-
 #### 7. `cleanup_failed_experiment.py`
 **Purpose**: Clean up failed experiments to allow rerunning
 
@@ -412,7 +258,7 @@ python cleanup_failed_experiment.py --job-id D5_0 D5_1 D5_2
 python cleanup_failed_experiment.py --all-failed
 
 # Pattern matching
-python cleanup_failed_experiment.py --pattern "D5_*" --job-file jobs/global_prune_nn_advanced_jobs.json
+python cleanup_failed_experiment.py --pattern "D5_*"
 
 # Dry run (preview without deleting)
 python cleanup_failed_experiment.py --job-id D5_0 --dry-run
@@ -429,39 +275,9 @@ python cleanup_failed_experiment.py --job-id D5_0 --dry-run
 
 ---
 
-### Data Flow
-
-```
-1. User runs generate_jobs.py
-   ↓
-2. Creates jobs/global_prune_nn_advanced_jobs.json
-   ↓
-3. User starts queue manager (advanced or distributed)
-   ↓
-4. Queue manager loads jobs from JSON file
-   ↓
-5. For each job:
-   a. Acquires GPU
-   b. Creates output directory
-   c. Executes: python global_prune_nn_hparam_tuner.py [args]
-   ↓
-6. Hyperparameter tuner:
-   a. Loads data
-   b. Runs Optuna study (100 trials)
-   c. For each trial:
-      - Creates GlobalPrunedFC_NN model
-      - Trains with iterative global pruning
-      - Evaluates on validation set
-   d. Saves best model and metrics
-   ↓
-7. Results saved to results/D{drug}/D{drug}_{experiment_id}/
-```
-
----
-
 ## Usage Guide
 
-Bundled commands are in **`jobs/global_prune_nn_warmup_jobs.txt`** and **`jobs/global_prune_nn_warmup_advanced_jobs.json`** (paths use **`../../Data/`**). From **`ArchitecturePerformanceExperiments/GP-NN/`**:
+Bundled commands are in **`jobs/global_prune_nn_warmup_jobs.txt`** (paths use **`../../Data/`**). From **`ArchitecturePerformanceExperiments/GP-NN/`**:
 
 ```bash
 cd ArchitecturePerformanceExperiments/GP-NN
@@ -563,147 +379,6 @@ Example: If `prune_frequency=10` and `prune_percentage=0.1`:
 
 ---
 
-## Job Management
-
-### Job File Format
-
-**JSON Format** (`global_prune_nn_advanced_jobs.json`):
-```json
-{
-  "description": "GlobalPrunedFC_NN Hyperparameter Tuning Jobs",
-  "total_jobs": 600,
-  "jobs": [
-    {
-      "id": "D5_0",
-      "command": "python -u global_prune_nn_hparam_tuner.py -drug 5 ...",
-      "priority": 5,
-      "max_retries": 2,
-      "metadata": {
-        "drug_id": 5,
-        "experiment_id": 0,
-        "output_dir": "results/D5/D5_0",
-        "seed": 0
-      }
-    }
-  ]
-}
-```
-
-### Job Execution Flow
-
-1. **Queue Manager** loads jobs from JSON
-2. **Checks Status**:
-   - Skips if already completed
-   - Skips if currently running (distributed only)
-3. **Acquires Resources**:
-   - Finds available GPU
-   - Acquires job lock (distributed only)
-4. **Executes Command**:
-   - Creates output directory
-   - Sets CUDA device
-   - Changes to correct directory
-   - Runs hyperparameter tuning
-5. **Updates Status**:
-   - Marks as completed or failed
-   - Releases lock
-
-### Command Structure
-
-Generated commands follow this pattern:
-```bash
-python -u global_prune_nn_hparam_tuner.py \
-    -drug {drug_id} \
-    -train_file {train_file} \
-    -val_file {val_file} \
-    -test_file {test_file} \
-    -cell2id {cell2id_file} \
-    -ge_data {ge_data_file} \
-    -n_trials 100 \
-    -seed {seed} \
-    -output_dir {output_dir} \
-    > {log_file}
-```
-
-Queue managers automatically add `-cuda {gpu_id}` if not present.
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. Jobs Not Starting
-**Symptoms**: Queue manager shows no jobs starting
-
-**Solutions**:
-- Check GPU availability: `nvidia-smi`
-- Verify job file exists: `ls jobs/global_prune_nn_advanced_jobs.json`
-- Check logs: `tail -f logs/gpu_queue_manager.log`
-- Verify directory paths are correct
-
-#### 2. Distributed Jobs Running Multiple Times
-**Symptoms**: Same job running on multiple nodes
-
-**Solutions**:
-- Check lock directory permissions: `ls -la shared/locks/`
-- Verify shared filesystem is accessible from all nodes
-- Check lock file timestamps (stale locks may need cleanup)
-
-#### 3. Out of Memory Errors
-**Symptoms**: CUDA out of memory errors
-
-**Solutions**:
-- Reduce batch size (modify `batch_size_power` range)
-- Reduce number of concurrent jobs
-- Check GPU memory: `nvidia-smi`
-
-#### 4. Pruning Errors
-**Symptoms**: Errors during pruning or models not achieving target sparsity
-
-**Solutions**:
-- Verify `prune_percentage` is between 0.05 and 0.5 (minimum 5%)
-- Check that `prune_frequency` is positive
-- Ensure model has weights to prune
-- If trials consistently return -1000.0, the pruning schedule may be too aggressive or too conservative
-- Consider adjusting `prune_frequency` and `prune_percentage` ranges in hyperparameter search space
-- Note: Global pruning may require different hyperparameters than layer-wise pruning
-
-#### 5. Missing Data Files
-**Symptoms**: FileNotFoundError for data files
-
-**Solutions**:
-- Verify data paths in `generate_jobs.py`
-- Check that base_path is correct
-- Ensure data files exist for all drugs
-
-### Monitoring Commands
-
-```bash
-# Check running jobs
-ps aux | grep global_prune_nn_hparam_tuner
-
-# Check GPU usage
-nvidia-smi
-
-# Check queue status (distributed)
-python monitor_distributed_jobs.py --status-dir shared/status --lock-dir shared/locks
-
-# Watch mode for continuous monitoring
-python monitor_distributed_jobs.py --status-dir shared/status --lock-dir shared/locks --watch
-
-# Count completed jobs
-find results -name "final_results.json" | wc -l
-
-# Clean up failed experiments
-python cleanup_failed_experiment.py --all-failed --dry-run  # Preview
-python cleanup_failed_experiment.py --all-failed  # Actually delete
-
-# Check job file
-python -c "import json; data=json.load(open('jobs/global_prune_nn_advanced_jobs.json')); print(f'Total jobs: {data[\"total_jobs\"]}')"
-```
-
----
-
 ## Verification Against Code
 
 ### Model Architecture Verification
@@ -784,33 +459,6 @@ if not model.is_fully_pruned_to_target():
     return -1000.0  # Signal bad trial to Optuna
 ```
 ✅ Verified: Failed trials return -1000.0 to Optuna
-
-### Queue Manager Path Verification
-
-**From `advanced_gpu_queue.py`** (should reference `global_prune_nn`):
-✅ Verified: Path should be correct for global_prune_nn directory
-
-**From `distributed_gpu_queue.py`** (should reference `global_prune_nn`):
-✅ Verified: Path should be correct for global_prune_nn directory
-
-### Job Generation Verification
-
-**From `generate_jobs.py:64`**:
-```python
-command = (
-    f"python -u global_prune_nn_hparam_tuner.py "
-    f"-drug {drug} ..."
-)
-```
-✅ Verified: Commands use correct script name
-
-**From `generate_jobs.py`**:
-```python
-output_file = "jobs/global_prune_nn_advanced_jobs.json"
-```
-✅ Verified: Output file names match queue manager expectations
-
----
 
 ## Summary
 

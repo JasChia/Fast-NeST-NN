@@ -15,7 +15,6 @@ Training and scheduling code for the **original NeST-VNN** implementation (Zhao 
 |------|------|
 | `nest_vnn_hparam_tuner.py` | Optuna HPO; uses `src/` for the published NeST-VNN trainer stack. |
 | `jobs/nest_vnn_jobs.txt` | Bundled training commands (paths use `../../Data/...` from this folder). |
-| `jobs/nest_vnn_advanced_jobs.json` | Same jobs as JSON (optional). |
 | `cleanup_failed_experiment.py` | Operations helper. |
 
 ## Data

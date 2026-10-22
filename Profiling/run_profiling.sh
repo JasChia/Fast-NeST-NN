@@ -7,7 +7,7 @@ cd "$SCRIPT_DIR" || exit 1
 # Default parameters
 CUDA_DEVICE=0
 NUM_RUNS=100
-NODES_PER_ASSEMBLY=1
+NODES_PER_ASSEMBLY=4   # the paper's setting; matches profile_networks.py's own default
 OUTPUT_DIR="profiling_results"
 DATA_DIR=""
 

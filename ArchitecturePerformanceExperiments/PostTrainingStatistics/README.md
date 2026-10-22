@@ -168,4 +168,5 @@ The tuner's log line prints `h=4` whatever k is, because `setup_trials` prints b
 override lands. Ignore it. Two other checks run instead: the model class is wrapped to
 record the width it was actually built with (`k_used`, plus `n_params`), and the saved
 checkpoint's `final_aux_linear_layer.weight` shape is asserted against k. Both land in the
-output — treat a row without `note=arch_ok(k=N)` as suspect.
+output. The NeST-VNN sweep also writes `note=arch_ok(k=N)`; treat a row without it as
+suspect. The fNeST-NN sweep records `k_used` only — check it equals the requested k.

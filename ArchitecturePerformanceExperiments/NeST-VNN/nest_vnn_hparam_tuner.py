@@ -302,46 +302,46 @@ class DataWrapperForHparam:
         
         # Check if file has 2 or 4 columns
         if train_df_raw.shape[1] == 2:
-            # Format: cell_line, auc (no smiles or dataset)
+            # 2-column format: cell_index, auc
             train_df = pd.DataFrame({
                 'cell_line': train_df_raw[0],
-                'smiles': [''] * len(train_df_raw),  # Dummy smiles column
+                'drug': [''] * len(train_df_raw),  # placeholder; this format has no drug column
                 'auc': train_df_raw[1],
                 'dataset': ['default'] * len(train_df_raw)  # Default dataset for standardization
             })
         else:
-            # Format: cell_line, smiles, auc, dataset (4 columns)
+            # 4-column format: cell_name, drug_id, auc, dataset
             train_df = pd.read_csv(args.train_file, sep='\t', header=None,
-                                   names=['cell_line', 'smiles', 'auc', 'dataset'])
+                                   names=['cell_line', 'drug', 'auc', 'dataset'])
         
         # Load validation data
         val_df_raw = pd.read_csv(args.val_file, sep='\t', header=None)
         if val_df_raw.shape[1] == 2:
             val_df = pd.DataFrame({
                 'cell_line': val_df_raw[0],
-                'smiles': [''] * len(val_df_raw),
+                'drug': [''] * len(val_df_raw),
                 'auc': val_df_raw[1],
                 'dataset': ['default'] * len(val_df_raw)
             })
         else:
             val_df = pd.read_csv(args.val_file, sep='\t', header=None,
-                                names=['cell_line', 'smiles', 'auc', 'dataset'])
+                                names=['cell_line', 'drug', 'auc', 'dataset'])
         
         # Load test data
-        # Test data format: cell_line_name (string), smiles, auc, dataset (4 columns)
+        # Test data is 2-column (cell_index, auc) or 4-column (cell_name, drug_id, auc, dataset)
         test_df_raw = pd.read_csv(args.test_file, sep='\t', header=None)
         if test_df_raw.shape[1] == 2:
             # If 2 columns, treat as cell_line_id (int), auc
             test_df = pd.DataFrame({
                 'cell_line': test_df_raw[0],
-                'smiles': [''] * len(test_df_raw),
+                'drug': [''] * len(test_df_raw),
                 'auc': test_df_raw[1],
                 'dataset': ['default'] * len(test_df_raw)
             })
         else:
-            # If 4 columns: cell_line (name), smiles, auc, dataset
+            # If 4 columns: cell_name, drug_id, auc, dataset
             test_df = pd.read_csv(args.test_file, sep='\t', header=None,
-                                 names=['cell_line', 'smiles', 'auc', 'dataset'])
+                                 names=['cell_line', 'drug', 'auc', 'dataset'])
         
         # ---------------- Standardization (ignore dataset column, treat all as one dataset) ----------------
         # Compute single center/scale statistics from training data (ignoring dataset column)
@@ -389,7 +389,7 @@ class DataWrapperForHparam:
         print(f"Loaded validation data: {len(self.val_feature)} samples")
         
         # Process test data (cell_line is a name that needs mapping via cell2id)
-        # After standardization, test_df has columns: ['cell_line', 'smiles', 'z']
+        # After standardization, test_df has columns: ['cell_line', 'drug', 'z']
         # row[0] = cell_line name (string), row[2] = standardized AUC (z)
         test_features_list = []
         test_labels_list = []
@@ -443,7 +443,7 @@ class DataWrapperForHparam:
         # Apply standardization: z = (auc - center) / scale
         df = df.copy()
         df['z'] = (df['auc'] - center) / scale
-        df = df[['cell_line', 'smiles', 'z']]
+        df = df[['cell_line', 'drug', 'z']]
         return df
 
 

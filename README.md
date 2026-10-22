@@ -20,15 +20,13 @@ conda activate fast-nest-nn
 
 ## Data layout (required on disk)
 
-Large inputs live under **`Data/`** at the repository root (gitignored). After extracting **`Data_archives/`**, you should have, for each drug, a cell-line bundle directory. Two layouts are used in this repo:
+Large inputs live under **`Data/`** at the repository root (gitignored). Every bundled job command uses one layout:
 
-| Layout | Example path to `D298_cell2ind.txt` |
-|--------|-------------------------------------|
-| **Nested** (paths in many `jobs/*.txt` files) | `Data/nest_shuffle_data/CombatLog2TPM/Drug298/D298_CL/D298_cell2ind.txt` |
+    Data/nest_shuffle_data/CombatLog2TPM/Drug{drug}/D{drug}_CL/
 
 Per-drug folders contain **`D{drug}_cell2ind.txt`**, **`D{drug}_GE_Data.txt`**, and **`train_test_splits/experiment_*/`** with `true_training_data.txt`, `validation_data.txt`, and `test_data.txt`.
 
-**Ontology files** used by NeST-VNN and Profiling: **`Data/red_ontology.txt`** and **`Data/red_gene2ind.txt`** (or set **`FAST_NEST_DATA_ROOT`** / **`FNEST_ONTOLOGY_DIR`** as documented in `ArchitecturePerformanceExperiments/data_paths.py` and `Profiling/README.md`).
+**Ontology files** used by NeST-VNN and Profiling: **`Data/red_ontology.txt`** and **`Data/red_gene2ind.txt`**, directly under `Data/`. To point the drug bundles elsewhere set **`FAST_NEST_DATA_ROOT`** (see `ArchitecturePerformanceExperiments/data_paths.py`); `Profiling/` uses its own variables, documented in `Profiling/README.md`.
 
 ---
 
@@ -40,11 +38,10 @@ The `Data/` directory at the repo root is listed in `.gitignore` so large local 
 
 ### `Data_archives/` (in Git, LFS)
 
-Per-drug dataset archives are stored as `*.tar.gz` files (Git LFS). This is the exact data utilized for all experiments. Extract at the repository root:
-
-```bash
-tar -xzf Data_archives/<name>.tar.gz
-```
+Per-drug dataset archives are stored as `*.tar.gz` files (Git LFS). This is the exact data
+utilized for all experiments. Each archive unpacks to `D{drug}_CL/` at its own root, so it
+must be extracted into the matching per-drug directory — see
+**[Data_archives/README.md](Data_archives/README.md)** for the one-line loop that does all ten.
 
 ### `ArchitecturePerformanceExperiments/` (in Git — code and docs; outputs excluded)
 

@@ -1,13 +1,25 @@
 # Data archives
 
-Per-drug cell-line bundles for the Fast-NeST-NN pipelines, shipped as **`*.tar.gz`** (Git LFS). Extract at the **repository root** so paths match job files (`Data/...`):
+Per-drug cell-line bundles for the Fast-NeST-NN pipelines, shipped as **`*.tar.gz`** (Git LFS).
+
+Each archive unpacks to **`D{ID}_CL/`** at its own root, so it must be extracted *into* the
+per-drug directory the job files expect. Create that directory first:
 
 ```bash
 cd /path/to/Fast-NeST-NN
-tar -xzf Data_archives/D298_CL.tar.gz
+for A in Data_archives/D*_CL.tar.gz; do
+  ID=$(basename "$A" _CL.tar.gz); ID=${ID#D}
+  mkdir -p "Data/nest_shuffle_data/CombatLog2TPM/Drug${ID}"
+  tar -xzf "$A" -C "Data/nest_shuffle_data/CombatLog2TPM/Drug${ID}/"
+done
 ```
 
-Repeat for each archive you need. Archives unpack to **`D{ID}_CL/`** under **`Data/`** (create **`Data/`** first if it does not exist, or extract with a prefix that matches your layout).
+That produces `Data/nest_shuffle_data/CombatLog2TPM/Drug{ID}/D{ID}_CL/...`, which is the
+path every bundled job command uses. Extracting at the repository root instead gives
+`<repo>/D{ID}_CL/`, which no job can find.
+
+The ontology and gene-index files (`red_ontology.txt`, `red_gene2ind.txt`) are **not** in
+these archives; they are expected directly under `Data/`.
 
 ---
 
@@ -28,13 +40,14 @@ These files are what you get from a normal clone (names may evolve; list the fol
 | `D298_CL.tar.gz` |
 | `D380_CL.tar.gz` |
 
-Layout should match **`Data/nest_shuffle_data/CombatLog2TPM/Drug{ID}/D{ID}_CL/...`** or the flat **`Data/D{ID}_CL/...`** convention in the root **`README.md`**. Bundled training jobs under **`ArchitecturePerformanceExperiments/`** include drug **380** among the **10** IDs (see **`ArchitecturePerformanceExperiments/*/jobs/`**).
+These ten IDs are the reported drug set, used by every bundled job list. Models were also
+trained for D57 and D201, which are filtered out before reporting and have no archive here.
 
 ---
 
 ## Drug ID → compound name
 
-Paper / job commands use numeric drug IDs. Common mapping (not every ID has an archive in **`Data_archives/`**—see table above):
+Paper and job commands use numeric drug IDs:
 
 | ID | Name |
 |----|------|

@@ -37,7 +37,7 @@ replays each run's selected hyperparameters without re-tuning. See
 
 ## Shared: data and paths
 
-- **Tracked:** Python sources, READMEs, and **`jobs/*_jobs.txt`** / **`jobs/*_advanced_jobs.json`** (paths relative to `<repo>/Data/` via **`../../Data/...`** from each method directory).
+- **Tracked:** Python sources, READMEs, and **`jobs/*_jobs.txt`** (paths relative to `<repo>/Data/` via **`../../Data/...`** from each method directory).
 - **Not tracked:** **`results/`**, **`long_results/`**, **`logs/`**, **`shared/`**, and other local output or scratch folders under this tree (see root **`.gitignore`**).
 
 Clone the repo and extract **`Data_archives/`** into **`Data/`** at the repo root (see root **`README.md`**). To point job lists elsewhere, set **`FAST_NEST_DATA_ROOT`** or bulk-replace the **`../../Data`** prefix.

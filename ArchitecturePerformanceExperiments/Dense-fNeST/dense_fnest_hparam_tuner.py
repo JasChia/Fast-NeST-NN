@@ -44,8 +44,11 @@ def load_mapping(mapping_file, mapping_type):
 
 def load_train_data(train_file, val_file, cell2id):
     """Load training and validation data from individual files"""
-    train_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset'])
-    val_df = pd.read_csv(val_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset'])
+    # Column 2 is the drug id (e.g. Drug_298), not a SMILES string. Only the 4-column
+    # files (training_data.txt, test_data.txt) have all four; true_training_data.txt and
+    # validation_data.txt hold just (cell_index, auc) and pandas pads the rest with NaN.
+    train_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'drug', 'auc', 'dataset'])
+    val_df = pd.read_csv(val_file, sep='\t', header=None, names=['cell_line', 'drug', 'auc', 'dataset'])
 
     train_features = []
     train_labels = []
@@ -63,7 +66,7 @@ def load_train_data(train_file, val_file, cell2id):
 
 def load_pred_data(test_file, cell2id):
     """Load and preprocess test data"""
-    test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset'])
+    test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'drug', 'auc', 'dataset'])
 
     feature = []
     label = []

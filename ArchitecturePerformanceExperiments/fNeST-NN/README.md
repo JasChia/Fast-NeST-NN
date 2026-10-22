@@ -16,7 +16,6 @@ This folder contains training and job-scheduling code for **fNeST-NN**, the opti
 | `fnest_nn.py` | Core `eNest` PyTorch module (linear readout head). |
 | `fnest_nn_hparam_tuner.py` | Optuna-driven training; writes `results/...` and `fnest_nn_HTune.log` per run. |
 | `jobs/fnest_nn_jobs.txt` | Bundled training commands (paths use `../../Data/...` from this folder). |
-| `jobs/fnest_nn_advanced_jobs.json` | Same jobs as JSON (optional). |
 | `cleanup_failed_experiment.py` | Ops helper for partial runs. |
 | `result_agg.py` | Optional R² summary over `results/D*/`. |
 
@@ -39,7 +38,7 @@ Use the Conda **`environment.yml`** at the repository root (see root **`README.m
 
 ## Running `fnest_nn_hparam_tuner.py` manually
 
-Required arguments: **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**. Common options: **`-n_trials`**, **`-max_epochs`** (default **500**; use **`-max_epochs 10`** for a quick sanity check), **`-cuda`**, **`-seed`**, **`-output_dir`**.
+Arguments (enforced at load time, not by argparse): **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**. Common options: **`-n_trials`**, **`-max_epochs`** (default **500**; use **`-max_epochs 10`** for a quick sanity check), **`-cuda`**, **`-seed`**, **`-output_dir`**.
 
 Example (nested **`nest_shuffle_data/...`** paths; use **`Data/D{N}_CL/...`** if your checkout uses the flat layout):
 

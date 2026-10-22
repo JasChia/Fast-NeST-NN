@@ -9,7 +9,6 @@
 - `fc_nn.py` — model definition.
 - `fc_nn_hparam_tuner.py` — Optuna training driver.
 - `jobs/fc_nn_jobs.txt` — bundled training commands (paths relative to `<repo>/Data/` via `../../Data/...`).
-- `jobs/fc_nn_advanced_jobs.json` — same jobs as JSON (optional).
 
 ## Usage
 

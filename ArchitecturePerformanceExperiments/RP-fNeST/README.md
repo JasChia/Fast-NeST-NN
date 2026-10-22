@@ -58,7 +58,6 @@ Input (689 genes)
 | `uniform_random_do_di_snn.py` | Main SNN model implementation with DO+DI architecture |
 | `uniform_random_do_di_snn_hparam_tuner.py` | Optuna-based hyperparameter tuning for the DO+DI model |
 | `jobs/uniform_random_do_di_snn_jobs.txt` | Bundled training commands (`../../Data/...` from this folder) |
-| `jobs/uniform_random_do_di_snn_advanced_jobs.json` | Same jobs as JSON (optional) |
 | `cleanup_failed_experiment.py` | Utility to clean up failed experiments |
 
 ## Usage

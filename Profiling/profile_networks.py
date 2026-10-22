@@ -605,8 +605,8 @@ def main():
                        help='Output directory for results')
     parser.add_argument('--min-batch', type=int, default=1, help='Minimum batch size (2^min_batch)')
     parser.add_argument('--max-batch', type=int, default=13, help='Maximum batch size (2^max_batch, default=13 gives up to 8192)')
-    parser.add_argument('--min-npa', type=int, default=4, help='Minimum nodes per assembly (default=1)')
-    parser.add_argument('--max-npa', type=int, default=4, help='Maximum nodes per assembly (default=10)')
+    parser.add_argument('--min-npa', type=int, default=4, help='Minimum nodes per assembly')
+    parser.add_argument('--max-npa', type=int, default=4, help='Maximum nodes per assembly')
     parser.add_argument(
         '--data-dir',
         type=str,

@@ -2,8 +2,6 @@
 
 ## Running bundled jobs (this repository)
 
-This folder no longer includes `generate_jobs.py` or in-tree GPU queue scripts. Use **`jobs/r_sparse_nn_jobs.txt`** from **`ArchitecturePerformanceExperiments/RSNN/`** (one shell command per line; skip `#` comments). Paths use **`../../Data/...`**. Run with Slurm, GNU Parallel, or your cluster scheduler.
-
 ### Environment and CLI (current code)
 
 Activate the Conda env from root **`environment.yml`** (`conda activate fast-nest-nn`).
@@ -78,20 +76,10 @@ Each experiment maintains reproducibility through:
 
 ## System Architecture
 
-### Component Overview
-
-The system consists of three main components:
-
-1. **`generate_jobs.py`**: Generates job files for all experiments
-2. **`advanced_gpu_queue.py`**: Manages GPU resources and executes jobs in parallel
-3. **`r_sparse_nn_hparam_tuner.py`**: Performs hyperparameter optimization for a single experiment
-4. **`sparse_nn.py`**: Defines the Sparse_NN model architecture
-
 ### Workflow
 
 ```
 ┌─────────────────┐
-│ generate_jobs.py│  Creates 500 job configurations
 │                 │  (10 drugs × 50 experiments)
 └────────┬────────┘
          │
@@ -99,14 +87,12 @@ The system consists of three main components:
 ┌─────────────────────┐
 │ jobs/               │
 │ - r_sparse_nn_      │
-│   advanced_jobs.json│
 │ - r_sparse_nn_      │
 │   jobs.txt          │
 └────────┬────────────┘
          │
          ▼
 ┌─────────────────────┐
-│ advanced_gpu_queue  │  Manages GPU allocation
 │ .py                 │  Executes jobs in parallel
 └────────┬────────────┘
          │
@@ -127,17 +113,13 @@ The system consists of three main components:
 
 ## What this repository contains (RSNN/)
 
-**In Git:** `r_sparse_nn_hparam_tuner.py`, `sparse_nn.py`, `cleanup_failed_experiment.py`, **`jobs/r_sparse_nn_jobs.txt`**, **`jobs/r_sparse_nn_advanced_jobs.json`**, `README.md`, `DISTRIBUTED_SCHEDULING.md`, `test_sparsity_training.ipynb`.
-
-**Not in Git:** `generate_jobs.py`, `advanced_gpu_queue.py`, `distributed_gpu_queue.py`. Those names appear in **historical** sections below only; use the bundled **`jobs/`** files and your own Slurm / GNU Parallel / shell runner.
-
 **Local-only (created when you run experiments; gitignored):** `results/`, `logs/`, `shared/`.
 
 ## Usage (current)
 
 1. `cd <path/to/Fast-NeST-NN>/ArchitecturePerformanceExperiments/RSNN`
 2. Ensure **`Data/`** at the repo root matches paths in **`jobs/`** (see root **`README.md`**), e.g. `Data/nest_shuffle_data/CombatLog2TPM/Drug{drug}/D{drug}_CL/...`.
-3. Run lines from **`jobs/r_sparse_nn_jobs.txt`** (or submit them to your cluster). Do **not** expect `generate_jobs.py` to exist here.
+3. Run lines from **`jobs/r_sparse_nn_jobs.txt`** (or submit them to your cluster).
 
 ## File structure (as shipped)
 
@@ -151,16 +133,11 @@ ArchitecturePerformanceExperiments/RSNN/
 ├── test_sparsity_training.ipynb
 └── jobs/
     ├── r_sparse_nn_jobs.txt
-    └── r_sparse_nn_advanced_jobs.json
 ```
 
 After runs, **`results/`** and **`logs/`** may appear locally (ignored by Git).
 
 ---
-
-## Legacy documentation (below)
-
-The sections **Output Structure**, **Technical Details** (GPU queue manager, etc.), and older diagrams still refer to **`generate_jobs.py`** / **`advanced_gpu_queue.py`**. Treat them as **background**; they do **not** describe files present in this repository.
 
 ## Output Structure
 
@@ -224,31 +201,7 @@ Optuna explores the following hyperparameter space:
 - **Gradient Clipping**: Max norm of 1.0 to prevent gradient explosion
 - **Device**: CUDA (GPU) if available, CPU otherwise
 
-### GPU Queue Manager Features
-
-The `advanced_gpu_queue.py` script provides:
-
-1. **Automatic GPU Detection**: Finds available GPUs using `nvidia-smi`
-2. **GPU Allocation**: Assigns jobs to available GPUs
-3. **Process Management**: Tracks running jobs and handles failures
-4. **Retry Logic**: Automatically retries failed jobs (up to `max_retries`)
-5. **Priority Queue**: Jobs can be prioritized (currently all set to priority 5)
-6. **Logging**: Comprehensive logging of job status and execution
-7. **Graceful Shutdown**: Handles SIGINT/SIGTERM signals to clean up running jobs
-
 ## Verification
-
-### Verify Job Generation
-
-After running `generate_jobs.py`, verify:
-
-```bash
-# Check job count
-grep -c "^python" jobs/r_sparse_nn_jobs.txt  # Should be 600
-
-# Check JSON structure
-python -c "import json; data=json.load(open('jobs/r_sparse_nn_advanced_jobs.json')); print(f'Total jobs: {data[\"total_jobs\"]}')"
-```
 
 ### Verify Experiment Structure
 
@@ -264,44 +217,9 @@ The sparse network should have:
 - All nodes "alive" (at least one input and one output connection)
 - Pruning masks maintained during training (via `torch.prune`)
 
-## Troubleshooting
-
-### Common Issues
-
-1. **GPU Not Available**: Check `nvidia-smi` and ensure CUDA is properly configured
-2. **Out of Memory**: Reduce `--max-gpus` or batch size in hyperparameter space
-3. **Job Failures**: Check individual experiment logs in `results/D{drug}/D{drug}_{experiment}/`
-4. **Queue Manager Stops**: Check `logs/gpu_queue_manager.log` for errors
-
-### Checking Job Status
-
-```bash
-# View queue manager status
-tail -f logs/gpu_queue_manager.log
-
-# Check running processes
-ps aux | grep r_sparse_nn_hparam_tuner
-
-# Check GPU usage
-nvidia-smi
-
-# View recent experiment logs
-tail -f results/D5/D5_0/D5_0.log
-```
-
 ## Code Verification
 
 The following code snippets verify key aspects of the methodology:
-
-### 50 Experiments Per Drug
-
-From `generate_jobs.py`:
-```python
-for drug in drugs:  # 10 drugs
-    for i in range(50):  # 50 experiments per drug
-        seed = i * 1000  # Unique seed per experiment
-        # ... creates job configuration
-```
 
 ### Same Sparse Network Configuration
 
@@ -309,18 +227,6 @@ From `r_sparse_nn_hparam_tuner.py`:
 ```python
 # genotype_hiddens is fixed at 4 for all experiments
 self.genotype_hiddens = 4  # Fixed, not tuned
-```
-
-### Unique Seeds Per Experiment
-
-From `generate_jobs.py`:
-```python
-seed = i * 1000  # experiment 0: seed 0, experiment 1: seed 1000, etc.
-```
-
-From `r_sparse_nn_hparam_tuner.py`:
-```python
-trial_seed = trial.number + args.seed  # Each trial within experiment has unique seed
 ```
 
 ### Sparse Network Edge Counts

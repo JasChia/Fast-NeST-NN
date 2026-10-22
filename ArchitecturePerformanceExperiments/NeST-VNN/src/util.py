@@ -116,13 +116,16 @@ def calc_std_vals(df, zscore_method):
 def standardize_data(df, std_df):
 	merged = pd.merge(df, std_df, how="left", on=['dataset'], sort=False)
 	merged['z'] = (merged['auc'] - merged['center']) / merged['scale']
-	merged = merged[['cell_line', 'smiles', 'z']]
+	merged = merged[['cell_line', 'drug', 'z']]
 	return merged
 
 
 def load_train_data(train_file, cell2id, zscore_method, std_file, seed=42):
 
-	all_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset'])
+	# Column 2 is the drug id (e.g. Drug_298), not a SMILES string. Only the 4-column
+	# files (training_data.txt, test_data.txt) have all four; true_training_data.txt and
+	# validation_data.txt hold just (cell_index, auc) and pandas pads the rest with NaN.
+	all_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'drug', 'auc', 'dataset'])
 
 	train_cell_lines = list(set(all_df['cell_line']))
 	val_cell_lines = []
@@ -158,7 +161,7 @@ def load_train_data(train_file, cell2id, zscore_method, std_file, seed=42):
 def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 
 	train_std_df = pd.read_csv(train_std_file, sep='\t', header=None, names=['dataset', 'center', 'scale'])
-	test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset'])
+	test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'drug', 'auc', 'dataset'])
 	test_std_df = calc_std_vals(test_df, zscore_method)
 	for i, row in test_std_df.iterrows():
 		dataset = row['dataset']
