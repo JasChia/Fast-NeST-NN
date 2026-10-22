@@ -1,3 +1,13 @@
 nest_vnn/nest_vnn_logs
 # Generated shuffle QA artifacts (large JSON / logs from analyze_shuffle_assignments.py)
 nest_vnn/shuffle_assignment_analysis/outputs/
+
+# Degree-preserving shuffle arm: per-run training outputs
+degree_preserving_shuffle/nest_vnn_logs/
+
+# Interpretability: per-run scores and the collected importance tables (tens of MB)
+interpretability/results/
+interpretability/assembly_importance.csv
+interpretability/gene_importance.csv
+interpretability/ranking_*.csv
+interpretability/ranking_report*.txt

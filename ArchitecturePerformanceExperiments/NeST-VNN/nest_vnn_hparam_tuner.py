@@ -137,6 +137,7 @@ def evaluate_model_metrics(
             "spearman_corr": 0.0,
             "r2_score": -1000.0,
             "loss": 0.0,
+            "rmse": 0.0,
         }
     
     val_label_gpu = val_label.cuda(cuda_id)
@@ -181,6 +182,7 @@ def evaluate_model_metrics(
             "spearman_corr": 0.0,
             "r2_score": -1000.0,
             "loss": val_loss.item() if torch.is_tensor(val_loss) else float(val_loss),
+            "rmse": (val_loss.item() if torch.is_tensor(val_loss) else float(val_loss)) ** 0.5,
         }
     
     pearson_corr = pearson_correlation(val_predict, val_label_gpu)
@@ -194,6 +196,7 @@ def evaluate_model_metrics(
         "spearman_corr": spearman_corr,
         "r2_score": r2,
         "loss": val_loss.item() if torch.is_tensor(val_loss) else float(val_loss),
+        "rmse": (val_loss.item() if torch.is_tensor(val_loss) else float(val_loss)) ** 0.5,
     }
 
 
@@ -208,6 +211,8 @@ def save_metrics_to_csv(val_metrics: Dict, test_metrics: Dict, save_dir: Path) -
          f"{test_metrics['r2_score']:.4f}" if test_metrics else "N/A"],
         ["Loss", f"{val_metrics['loss']:.4f}", 
          f"{test_metrics['loss']:.4f}" if test_metrics else "N/A"],
+        ["RMSE", f"{val_metrics['rmse']:.4f}", 
+         f"{test_metrics['rmse']:.4f}" if test_metrics else "N/A"],
     ]
     df = pd.DataFrame(metrics_data, columns=["Metric", "Validation", "Test"])
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -788,7 +793,8 @@ class OptunaNestVNNTrainer:
                 epoch_start_time = epoch_end_time
                 
                 # Report to Optuna
-                trial.report(val_loss.item() if torch.is_tensor(val_loss) else val_loss, epoch)
+                # negated: direction is "maximize", so the pruner needs a value that rises as loss falls
+                trial.report(-(val_loss.item() if torch.is_tensor(val_loss) else val_loss), epoch)
                 
                 # Save best model based on validation loss (delta threshold 1e-4).
                 # First epoch always saves; subsequent epochs save only on a strict improvement.

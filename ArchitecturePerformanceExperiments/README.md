@@ -20,8 +20,18 @@ This directory holds **drug-response training code and bundled job lists** for *
 | `GP-NN/` | `global_prune_nn_hparam_tuner.py` | `OptunaGlobalPruneNNTrainer` | `GlobalPrunedFC_NN` |
 | `LP-NN/` | `layer_prune_nn_hparam_tuner.py` | `OptunaLayerPruneNNTrainer` | `LayerPrunedFC_NN` |
 | `UGP-NN/` | `relaxed_global_prune_nn_hparam_tuner.py` | `OptunaRelaxedGlobalPruneNNTrainer` | `RelaxedGlobalPrunedFC_NN` |
+| `LightGBM/` | `lightgbm_hparam_tuner.py` | `OptunaLightGBMTrainer` | gradient-boosted trees in `lightgbm_model.py` |
 
 Each method’s **`README.md`** describes paper-specific methodology, paths, and any legacy notes. **Shared** instructions (data layout and how to run jobs) are **here** so individual READMEs stay short and consistent.
+
+**`LightGBM/`** is the **non-neural baseline**: the same drugs, splits, Optuna protocol and
+metrics as the neural methods, on CPU.
+
+**`PostTrainingStatistics/`** is not a method. It holds scripts that compute **extra statistics
+from models already saved by a completed run** — recomputing Spearman/RMSE and cross-method
+paired tests from saved checkpoints without retraining, plus a neurons-per-assembly sweep that
+replays each run's selected hyperparameters without re-tuning. See
+**[`PostTrainingStatistics/README.md`](PostTrainingStatistics/README.md)**.
 
 ---
 
@@ -35,6 +45,9 @@ Clone the repo and extract **`Data_archives/`** into **`Data/`** at the repo roo
 **Layouts:** many jobs use **`Data/nest_shuffle_data/CombatLog2TPM/Drug{N}/D{N}_CL/...`**. A flat **`Data/D{N}_CL/...`** tree also works if you pass consistent paths into the tuner.
 
 **Ontology / gene maps:** shared helpers are in **`data_paths.py`**.
+
+**Metrics:** every method writes `metrics.csv` with **Pearson Correlation**, **Spearman
+Correlation**, **R² Score**, **Loss** (MSE) and **RMSE**, for validation and test.
 
 ---
 

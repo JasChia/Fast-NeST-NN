@@ -32,7 +32,32 @@ NeSTVNNShuffleAnalysis/
         ├── analyze_shuffle_assignments.py
         └── run_shuffle_analysis.sh
         # shuffle_assignment_analysis/outputs/ is created at runtime (gitignored)
+├── degree_preserving_shuffle/         # Third arm: degree-preserving first-layer shuffle
+│   ├── README.md
+│   ├── make_degree_shuffled_ontology.py
+│   └── ontologies/                    # red_ontology_degshuf_exp{0..49}.txt
+└── interpretability/                  # Assembly / gene importance (SI / RLIPP)
+    ├── README.md
+    ├── METHODOLOGY.md
+    ├── rlipp_calculator.py            # vendored verbatim from idekerlab/nest_vnn
+    ├── rlipp_helper.py                # vendored verbatim
+    ├── calc_scores_serial.py
+    ├── collect_importance.py
+    ├── analyze_rankings.py
+    └── verify_equivalence.py
 ```
+
+Two companion studies sit alongside `nest_vnn/`:
+
+- **[`degree_preserving_shuffle/`](degree_preserving_shuffle/)** — a **third arm** next to
+  unshuffled and shuffled. Rather than permuting the gene expression columns, it randomizes
+  which **first-hidden-layer** assembly each gene feeds, **within groups of equal-degree
+  assemblies**, leaving every assembly's input degree and every gene's output degree
+  unchanged. Everything else, including the expression matrix, is identical to the
+  unshuffled arm, so the only variable is the gene-to-assembly assignment.
+- **[`interpretability/`](interpretability/)** — **SI / RLIPP** assembly and gene importance
+  computed from the trained models in `nest_vnn_logs/`, and how importance rankings change
+  between arms.
 
 **`nest_vnn_logs/`** holds per-run outputs when training has been executed. It is **gitignored** (see **`.gitignore`**) because it is large; a fresh clone has an empty or absent tree until you run jobs or restore an archive.
 

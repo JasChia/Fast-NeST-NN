@@ -112,6 +112,7 @@ def evaluate_model_metrics(
         "spearman_corr": spearman_corr,
         "r2_score": r2,
         "loss": loss.item(),
+        "rmse": loss.item() ** 0.5,
     }
 
 
@@ -122,6 +123,7 @@ def save_metrics_to_csv(val_metrics: Dict[str, float], test_metrics: Dict[str, f
         ["Spearman Correlation", f"{val_metrics['spearman_corr']:.4f}", f"{test_metrics['spearman_corr']:.4f}" if test_metrics else "N/A"],
         ["R² Score", f"{val_metrics['r2_score']:.4f}", f"{test_metrics['r2_score']:.4f}" if test_metrics else "N/A"],
         ["Loss", f"{val_metrics['loss']:.4f}", f"{test_metrics['loss']:.4f}" if test_metrics else "N/A"],
+        ["RMSE", f"{val_metrics['rmse']:.4f}", f"{test_metrics['rmse']:.4f}" if test_metrics else "N/A"],
     ]
     df = pd.DataFrame(metrics_data, columns=["Metric", "Validation", "Test"])
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -361,7 +363,8 @@ class OptunaRPfNeSTTrainer:
                         cl_val_labels = cl_val_labels.unsqueeze(1)
                     new_val_loss = loss_fn(cl_val_pred, cl_val_labels)
 
-                    trial.report(new_val_loss.item(), epoch)
+                    # negated: direction is "maximize", so the pruner needs a value that rises as loss falls
+                    trial.report(-new_val_loss.item(), epoch)
 
                     # Save best model based on validation loss (delta threshold 1e-4).
                     # First epoch always saves; subsequent epochs save only on a strict improvement.

@@ -145,7 +145,8 @@ def evaluate_model_metrics(model, data, labels, device):
             'pearson_corr': pearson_corr,
             'spearman_corr': spearman_corr,
             'r2_score': r2,
-            'loss': loss.item()
+            'loss': loss.item(),
+            'rmse': loss.item() ** 0.5
         }
 
 def save_metrics_to_csv(val_metrics, test_metrics, save_dir):
@@ -160,6 +161,8 @@ def save_metrics_to_csv(val_metrics, test_metrics, save_dir):
         metrics_data.append(['R² Score', f"{val_metrics['r2_score']:.4f}", 
                             f"{test_metrics['r2_score']:.4f}" if test_metrics else "N/A"])
         metrics_data.append(['Loss', f"{val_metrics['loss']:.4f}", "N/A"])
+        metrics_data.append(['RMSE', f"{val_metrics['rmse']:.4f}", 
+                            f"{test_metrics['rmse']:.4f}" if test_metrics else "N/A"])
     
     # Create DataFrame and save to CSV
     df = pd.DataFrame(metrics_data, columns=['Metric', 'Validation', 'Test'])
@@ -488,7 +491,8 @@ class OptunaLayerPruneNNTrainer():
                         new_val_loss = torch.tensor(1000.0, device=device)
 
                     # Report validation loss to Optuna every epoch
-                    trial.report(new_val_loss.item(), epoch)
+                    # negated: direction is "maximize", so the pruner needs a value that rises as loss falls
+                    trial.report(-new_val_loss.item(), epoch)
 
                     # Save best model based on validation loss (delta threshold 1e-4),
                     # but only once the model has been pruned to its target sparsity.
@@ -590,13 +594,15 @@ class OptunaLayerPruneNNTrainer():
                     'pearson_correlation': val_metrics['pearson_corr'],
                     'spearman_correlation': val_metrics['spearman_corr'],
                     'r2_score': val_metrics['r2_score'],
-                    'loss': val_metrics['loss']
+                    'loss': val_metrics['loss'],
+                    'rmse': val_metrics['rmse']
                 },
                 'test': {
                     'pearson_correlation': test_metrics['pearson_corr'],
                     'spearman_correlation': test_metrics['spearman_corr'],
                     'r2_score': test_metrics['r2_score'],
-                    'loss': test_metrics['loss']
+                    'loss': test_metrics['loss'],
+                    'rmse': test_metrics['rmse']
                 }
             }
             

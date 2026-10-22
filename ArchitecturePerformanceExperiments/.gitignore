@@ -6,3 +6,6 @@ logs
 results
 __pycache__
 */jobs/*.json
+# PostTrainingStatistics outputs (score CSVs and sweep CSVs)
+PostTrainingStatistics/scores/
+PostTrainingStatistics/sweep/
