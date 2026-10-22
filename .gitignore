@@ -10,9 +10,15 @@ ArchitecturePerformanceExperiments/**/results/
 ArchitecturePerformanceExperiments/**/long_results/
 ArchitecturePerformanceExperiments/**/logs/
 ArchitecturePerformanceExperiments/**/shared/
-ArchitecturePerformanceExperiments/__pycache__/
-ArchitecturePerformanceExperiments/**/__pycache__/
-ArchitecturePerformanceExperiments/**/*.pyc
+__pycache__/
+*.pyc
+
+# Per-job logs: every bundled job line ends `> D{drug}_{exp}.log`, writing into the
+# method directory it was launched from.
+*.log
+
+# Internal post-mortem kept locally; references tooling this repo does not ship.
+ArchitecturePerformanceExperiments/LP-NN/JOB_FAILURE_ANALYSIS.md
 
 # Job lists under ArchitecturePerformanceExperiments/*/jobs/ are tracked (relative paths to <repo>/Data).
 
