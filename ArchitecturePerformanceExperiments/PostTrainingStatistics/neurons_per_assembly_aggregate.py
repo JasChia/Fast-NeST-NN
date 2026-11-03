@@ -1,7 +1,8 @@
 """Aggregate the neurons-per-assembly sensitivity grid.
 
-Reads scoring/sens/sens_D<drug>_<exp>.csv (one per experiment, 10 rows: k=1..10),
-checks the architecture actually varied, and reports performance vs k.
+Reads one CSV per experiment (10 rows each, k=1..10) from --sweep-dir, checks the
+architecture actually varied, and reports performance vs k. Run it once per method, on
+that method's own sweep directory.
 
 Pairing: every k shares the same (drug, experiment) split and the same pinned
 hyperparameters, so k-values pair exactly within a run. The 50 experiments per drug are
@@ -18,15 +19,19 @@ _ap.add_argument("--sweep-dir", type=Path, default=Path("sweep"),
                  help="directory of per-experiment sweep CSVs (default: ./sweep)")
 _ap.add_argument("--out-dir", type=Path, default=Path("scores"),
                  help="where to write the summaries (default: ./scores)")
+_ap.add_argument("--pattern", default="sweep_D*_*.csv",
+                 help="glob for the per-experiment CSVs inside --sweep-dir. Keep the "
+                      "NeST-VNN and fNeST-NN sweeps in separate directories; this "
+                      "aggregator pools whatever it matches (default: sweep_D*_*.csv)")
 _args = _ap.parse_args()
 S, OUT = _args.sweep_dir, _args.out_dir
 # Drugs reported in the paper (Data_archives/ and the bundled job lists). The trained
 # grid may hold more; this subsets it.
 DRUG_IDS = {5, 80, 99, 127, 151, 188, 244, 273, 298, 380}
-METRICS = ["test_r2", "test_spearman", "test_rmse"]
+METRICS = ["test_r2", "test_pearson", "test_spearman", "test_rmse"]
 REF_K = 4
 
-files = sorted(f for f in S.glob("sens_D*_*.csv") if "pilot" not in f.name)
+files = sorted(f for f in S.glob(_args.pattern) if "pilot" not in f.name)
 if not files:
     sys.exit("no sensitivity CSVs yet")
 df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)

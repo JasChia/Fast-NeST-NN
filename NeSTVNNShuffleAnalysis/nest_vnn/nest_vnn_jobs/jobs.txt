@@ -1,7 +1,7 @@
 # NeST-VNN Drug Experiment Jobs
 # Generated automatically for 10 drugs
 # Total jobs: 1000
-# Drugs: [5, 80, 99, 127, 151, 188, 201, 244, 273, 298]
+# Drugs: [5, 80, 99, 127, 151, 188, 244, 273, 298, 380]
 # Experiments per drug: 50 (0..49)
 # Shuffle conditions: True, False
 # Training parameters: epoch=250, batchsize=8, seed=42

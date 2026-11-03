@@ -22,7 +22,7 @@ This directory holds **drug-response training code and bundled job lists** for *
 | `UGP-NN/` | `relaxed_global_prune_nn_hparam_tuner.py` | `OptunaRelaxedGlobalPruneNNTrainer` | `RelaxedGlobalPrunedFC_NN` |
 | `LightGBM/` | `lightgbm_hparam_tuner.py` | `OptunaLightGBMTrainer` | gradient-boosted trees in `lightgbm_model.py` |
 
-Each method’s **`README.md`** describes paper-specific methodology, paths, and any legacy notes. **Shared** instructions (data layout and how to run jobs) are **here** so individual READMEs stay short and consistent.
+Each method’s **`README.md`** describes paper-specific methodology and paths. **Shared** instructions (data layout and how to run jobs) are **here** so individual READMEs stay short and consistent.
 
 **`LightGBM/`** is the **non-neural baseline**: the same drugs, splits, Optuna protocol and
 metrics as the neural methods, on CPU.
@@ -54,7 +54,7 @@ Correlation**, **R² Score**, **Loss** (MSE) and **RMSE**, for validation and te
 ## Shared: how to run bundled jobs
 
 1. `cd ArchitecturePerformanceExperiments/<MethodFolder>/`
-2. Run lines from **`jobs/*_jobs.txt`** (one `python ...` command per line; skip `#` comments), or submit them to your **cluster job runner** (Slurm, GNU Parallel, etc.). This repo does **not** ship in-tree GPU queue drivers.
+2. Run lines from **`jobs/*_jobs.txt`** (one `python ...` command per line; skip `#` comments), or submit them to your **cluster job runner** (Slurm, GNU Parallel, etc.).
 
 Each **`*_hparam_tuner.py`** accepts **`-n_trials`** and **`-max_epochs`** (default **500** epochs per Optuna trial).
 
@@ -68,9 +68,3 @@ To tarball a local **`results/`** tree (does not affect Git):
 cd ArchitecturePerformanceExperiments/<MethodFolder>
 tar -I 'gzip -1' -cf results.tar.gz results
 ```
-
----
-
-## Aggregation / downstream statistics
-
-Cross-method CSV aggregation (paired tests, Benjamini–Hochberg, etc.) is **not** implemented by any script **committed in this repository** (for example there is no `compute_metrics_and_comparisons.py` in the tree). After experiments finish, use your own analysis code or restore scripts from backups. Typical dependencies (**pandas**, **scipy**, **statsmodels**) are available from the root **`environment.yml`**.

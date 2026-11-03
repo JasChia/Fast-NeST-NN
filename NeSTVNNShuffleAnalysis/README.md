@@ -1,10 +1,10 @@
 # NeST-VNN shuffle experiment (reproducible pipeline)
 
-This directory is part of the **Fast-NeST-NN** monorepo at **`NeSTVNNShuffleAnalysis/`** (tracked on `main`). You do **not** need to extract a separate archive; clone the repository once and work from this folder.
+This directory is part of the **Fast-NeST-NN** monorepo at **`NeSTVNNShuffleAnalysis/`** (tracked on `main`); clone the repository once and work from this folder.
 
 This workspace implements the **NeST-VNN** gene-order shuffle study: for each of **10 drugs**, **50** paired runs (**shuffled** vs **unshuffled** input gene order), with metrics used in the paper tables.
 
-### What is in this folder now
+### Contents
 
 At the repository root, **`NeSTVNNShuffleAnalysis/`** contains only:
 
@@ -12,29 +12,32 @@ At the repository root, **`NeSTVNNShuffleAnalysis/`** contains only:
 NeSTVNNShuffleAnalysis/
 ├── .gitignore
 ├── README.md                          # This file
-└── nest_vnn/
-    ├── src/                           # PyTorch training stack
-    │   ├── train.py                   # Entrypoint invoked by jobs.txt
-    │   ├── drugcell_nn.py
-    │   ├── vnn_trainer.py
-    │   ├── training_data_wrapper.py
-    │   ├── util.py
-    │   ├── predict.py
-    │   ├── optuna_nn_trainer.py
-    │   └── ccc_loss.py
-    ├── nest_vnn_jobs/
-    │   ├── jobs.txt                   # 1000 training commands (paths relative to nest_vnn/)
-    │   └── run_all_jobs.sh            # Optional: run every line sequentially
-    ├── nest_vnn_logs/                 # One subdirectory per successful job (see below)
-    ├── scripts/
-    │   └── rewrite_jobs_portable_paths.py   # One-off: migrate old absolute paths in jobs
-    └── shuffle_assignment_analysis/
-        ├── analyze_shuffle_assignments.py
-        └── run_shuffle_analysis.sh
-        # shuffle_assignment_analysis/outputs/ is created at runtime (gitignored)
+├── Data -> ../Data                    # link to the repo-root Data/
+├── create_train_test_splits.py        # Generated the splits and shuffled gene orders
+├── nest_vnn/
+│   ├── src/                           # PyTorch training stack
+│   │   ├── train.py                   # Entrypoint invoked by jobs.txt
+│   │   ├── drugcell_nn.py
+│   │   ├── vnn_trainer.py
+│   │   ├── training_data_wrapper.py
+│   │   ├── util.py
+│   │   ├── predict.py
+│   │   ├── optuna_nn_trainer.py
+│   │   └── ccc_loss.py
+│   ├── nest_vnn_jobs/
+│   │   ├── jobs.txt                   # 1000 training commands (paths relative to nest_vnn/)
+│   │   └── run_all_jobs.sh            # Optional: run every line sequentially
+│   ├── nest_vnn_logs/                 # One subdirectory per successful job (see below)
+│   └── shuffle_assignment_analysis/
+│       ├── analyze_shuffle_assignments.py
+│       ├── run_shuffle_analysis.sh
+│       └── shuffle_performance_table.py     # Table 3 / Supp Tables S1-S3: gene-permuted vs unshuffled
+│       # shuffle_assignment_analysis/outputs/ is created at runtime (gitignored)
 ├── degree_preserving_shuffle/         # Third arm: degree-preserving first-layer shuffle
 │   ├── README.md
 │   ├── make_degree_shuffled_ontology.py
+│   ├── rewiring_stats.py              # how many connections the swaps move
+│   ├── degree_preserving_tables.py    # Table 3 / Supp Tables S1-S3: degree-preserving vs unshuffled
 │   └── ontologies/                    # red_ontology_degshuf_exp{0..49}.txt
 └── interpretability/                  # Assembly / gene importance (SI / RLIPP)
     ├── README.md
@@ -44,6 +47,8 @@ NeSTVNNShuffleAnalysis/
     ├── calc_scores_serial.py
     ├── collect_importance.py
     ├── analyze_rankings.py
+    ├── run_importance.sh              # predict + score one run of any arm
+    ├── build_supp_tables.py           # Table 4: same-split importance agreement
     └── verify_equivalence.py
 ```
 
@@ -59,13 +64,13 @@ Two companion studies sit alongside `nest_vnn/`:
   computed from the trained models in `nest_vnn_logs/`, and how importance rankings change
   between arms.
 
-**`nest_vnn_logs/`** holds per-run outputs when training has been executed. It is **gitignored** (see **`.gitignore`**) because it is large; a fresh clone has an empty or absent tree until you run jobs or restore an archive.
+**`nest_vnn_logs/`** holds per-run outputs when training has been executed. It is **gitignored** (see **`.gitignore`**) because it is large.
 
-There is **no** `NeSTVNNShuffleAnalysis/Data/` directory in this tree: inputs are expected at the **repository root** **`Data/`** (see **Data layout** below). There is **no** `analysis_results/` directory and **no** `combine_metrics.py` / `regenerate_test_summary.py` / combined CSVs in this snapshot—those were part of the downstream paper pipeline and are not bundled here (see **Post-training aggregation** below).
+Inputs are expected at the **repository root** **`Data/`** (see **Data layout** below). The paper's tables are rebuilt from the per-run outputs by the scripts listed under **Post-training aggregation** below.
 
 All **paths inside `nest_vnn_jobs/jobs.txt`** are **relative to the `nest_vnn/` directory**:
 
-- Training data and ontology: **`../Data/...`** (sibling `Data/` folder at repo root).
+- Training data and ontology: **`../Data/...`** (`NeSTVNNShuffleAnalysis/Data` links to the repo-root `Data/`).
 - Run outputs: **`-modeldir nest_vnn_logs/D{drug}_{shuffled|unshuffled}_exp_{id}`** so each job writes under `nest_vnn/nest_vnn_logs/`.
 
 ---
@@ -74,7 +79,7 @@ All **paths inside `nest_vnn_jobs/jobs.txt`** are **relative to the `nest_vnn/` 
 
 - **Python 3** with **PyTorch** (CUDA build recommended), **pandas**, **numpy**, **scipy**, **scikit-learn** (see `nest_vnn/src/` imports).
 - **Recommended:** the Conda **`environment.yml`** at the **Fast-NeST-NN** repository root (see parent **`README.md`**), then `conda activate fast-nest-nn`, or any other env with the same packages (PyTorch, Optuna, pandas, scikit-learn, etc.).
-- **GPU** with enough memory for DrugCell-style VNN training (same settings as `jobs.txt`: batch size 8, 250 epochs, early stopping inside trainer).
+- **GPU** with enough memory for DrugCell-style VNN training (same settings as `jobs.txt`: batch size 8, 250 epochs; `vnn_trainer.py` trains all epochs and keeps the last checkpoint that improved validation loss by more than `-delta`, default 1e-3 — there is no early stopping).
 - **Environment variable** `CUDA_VISIBLE_DEVICES` (or `-cuda` in `train.py`) set appropriately when launching jobs.
 
 The training code does not hardcode a Conda path; use the root **`environment.yml`** or your own env YAML if you maintain one locally.
@@ -83,7 +88,7 @@ The training code does not hardcode a Conda path; use the root **`environment.ym
 
 ## Data layout (`Data/`)
 
-Training reads from **`../Data/`** relative to **`nest_vnn/`**, i.e. **`<repository-root>/Data/`**. Use that path (recommended), or create **`NeSTVNNShuffleAnalysis/Data/`** with the same tree and symlink it to **`../Data`** from the repo root if you prefer a local copy beside this folder.
+Training reads from **`../Data/`** relative to **`nest_vnn/`**; **`NeSTVNNShuffleAnalysis/Data`** is a link to **`<repository-root>/Data/`**.
 
 Expected layout:
 
@@ -110,6 +115,11 @@ Data/
 ```
 
 **Drug IDs** in this study: `5, 80, 99, 127, 151, 188, 244, 273, 298, 380`.
+
+The splits and shuffled matrices were generated by `create_train_test_splits.py` (copy it into
+`Data/nest_shuffle_data/` and run it there; it writes `experiment_0`–`experiment_99`; experiments 0–49 are used). Experiment `i` uses seed
+`42 + i` for both its 80/20 train/test split and its gene-column permutation. The 64/16
+train/validation split is drawn later, inside `util.load_train_data`.
 
 If your data live elsewhere, either symlink `Data` → that location or set **`NEST_VNN_DATA`** to an absolute directory when running shuffle QA (see below). Retraining from `jobs.txt` expects the **`../Data/`** layout unless you regenerate `jobs.txt` with different prefixes.
 
@@ -191,15 +201,24 @@ ls nest_vnn_logs | head
 
 ---
 
-## Post-training aggregation (not in this tree)
+## Post-training aggregation
 
-This repository snapshot **does not include** the downstream aggregation stack that was used for the paper tables:
+`shuffle_assignment_analysis/shuffle_performance_table.py` builds the paper's shuffled vs
+unshuffled comparison (the Gene Permuted column of main Table 3 for R² and of Supplementary
+Tables S1–S3 for Pearson, Spearman and RMSE) from every run's `test_metrics.txt`, with RMSE
+computed from `test_predictions.txt` / `test_true_labels.txt`. The Degree-Preserving column comes
+from `degree_preserving_shuffle/degree_preserving_tables.py`:
 
-- No **`combine_metrics.py`** or **`nest_vnn/combined_model_metrics.csv`**
-- No **`regenerate_test_summary.py`** or **`test_*_summary_wilcoxon.csv`**
-- No **`analysis_results/`** (no `analyze_metrics.py`, `create_results_table.py`, or precomputed statistical CSVs)
+```bash
+cd NeSTVNNShuffleAnalysis/nest_vnn
+python shuffle_assignment_analysis/shuffle_performance_table.py   # -> shuffle_assignment_analysis/outputs/
+cd ..
+python degree_preserving_shuffle/degree_preserving_tables.py      # -> degree_preserving_shuffle/tables/
+```
 
-After training, each run still produces **`nest_vnn_logs/.../model_metrics.csv`** and related files under **`nest_vnn_logs/`** as described above. **This repository does not include** `combine_metrics.py`, Wilcoxon pipelines, or a **`metrics_analysis/`** folder—use your own downstream scripts if you need merged tables or BH-adjusted tests.
+Mean ± SD (ddof=1) over the 50 experiments, paired Wilcoxon signed-rank (R², Pearson and Spearman
+on the 4-dp values in `test_metrics.txt`, RMSE from the saved predictions; normal approximation, no continuity correction), Benjamini–Hochberg across the 10
+drugs.
 
 ---
 
@@ -229,16 +248,3 @@ Large JSON outputs go to **`shuffle_assignment_analysis/outputs/`** (gitignored)
 |----------|---------|
 | `CUDA_VISIBLE_DEVICES` | Select GPU(s) for `train.py`. |
 | `NEST_VNN_DATA` | Optional absolute override for shuffle QA data root (default: `<repo>/Data`). |
-
----
-
-## Migrating old absolute job paths
-
-If you still have a `jobs.txt` with **absolute paths** to an old data root (not `<repo>/Data`), run once (after backing up the file):
-
-```bash
-cd nest_vnn
-python scripts/rewrite_jobs_portable_paths.py
-```
-
-Then apply the same **`-modeldir` / `_exp_` / `nest_vnn_logs/`** transforms as in the current `jobs.txt`, or keep this repository’s checked-in `jobs.txt` as the source of truth.

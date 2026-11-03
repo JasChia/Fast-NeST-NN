@@ -10,7 +10,7 @@ Use the repository root **`environment.yml`** (see root **`README.md`**; `conda 
 
 **`layer_prune_nn_hparam_tuner.py`**: **`-n_trials`**, **`-max_epochs`** (default **500**), standard data paths as in **`jobs/`**.
 
-**Expected outputs:** Optuna journal (**`LayerPrunedFC_NN_HTune.log`**), **`trials/trial_*/model_best.pt`** (when target sparsity is met), **`best_model/`** with baked-in weights, **`final_results.json`**. Older sections may mention `model_final.pt`; the tuner now saves a single portable **`model_best.pt`**.
+**Expected outputs:** Optuna journal (**`LayerPrunedFC_NN_HTune.log`**), **`trials/trial_*/model_best.pt`** (when target sparsity is met), **`best_model/`** with baked-in weights, **`final_results.json`**. The tuner saves a single portable **`model_best.pt`**.
 
 ---
 
@@ -24,7 +24,6 @@ This directory contains a complete system for hyperparameter tuning of Layer Pru
 - **Optuna-based Hyperparameter Optimization**: Automatically searches optimal hyperparameters
 - **Bundled job lists**: `jobs/layer_prune_nn_jobs.txt` for batch execution on your cluster
 - **Comprehensive Metrics**: Tracks R², Pearson correlation, Spearman correlation, and loss
-- **Job Monitoring and Cleanup**: Tools for monitoring distributed jobs and cleaning up failed experiments
 
 ---
 
@@ -117,14 +116,12 @@ The model includes a validation function `is_fully_pruned_to_target()` that chec
    - Tracks best validation loss among fully-pruned models
 6. **Early Stopping**: Patience-based early stopping on validation loss
 7. **Final Model Preparation**:
-   - Loads best saved model (or current model if no best model saved)
+   - Loads best saved model (or the current model if it is at target sparsity)
    - Removes pruning masks using `prune.remove()` for all linear layers
-   - Saves as `model_final.pt` (clean state without pruning masks)
+   - Overwrites `model_best.pt` with the mask-free weights
    - If target sparsity not achieved, returns `-1000.0` to Optuna
 
 ---
-
-## System Architecture
 
 ## File Structure and Coordination
 
@@ -167,24 +164,22 @@ The model includes a validation function `is_fully_pruned_to_target()` that chec
 - Batch size: `2^2` to `2^5` (4 to 32)
 - Activation: Tanh or ReLU
 - **Prune frequency**: 1 to 50 epochs
-- **Prune percentage**: 0.0 to 0.5 (step 0.05)
+- **Prune percentage**: 0.05 to 0.5 (step 0.05)
 - **BatchNorm**: True or False
 
 **Dependencies**: 
 - `layer_prune_fc_nn.py` (imports `LayerPrunedFC_NN`)
 - Optuna, PyTorch, scikit-learn, pandas
 
-**Used By**: Job queue managers
+**Used By**: the bundled `jobs/*.txt` lines
 
 ---
 
-#### 7. `cleanup_failed_experiment.py`
+#### 3. `cleanup_failed_experiment.py`
 **Purpose**: Clean up failed experiments to allow rerunning
 
 **Features**:
-- Deletes lock files, status files, and experiment directories
-- Supports single jobs, multiple jobs, or pattern matching
-- Can clean up all failed jobs at once
+- Deletes `results/D{drug}/{job_id}/`
 - Dry-run mode to preview deletions
 
 **Usage Examples**:
@@ -195,20 +190,12 @@ python cleanup_failed_experiment.py --job-id D5_0
 # Clean up multiple experiments
 python cleanup_failed_experiment.py --job-id D5_0 D5_1 D5_2
 
-# Clean up all failed experiments
-python cleanup_failed_experiment.py --all-failed
-
-# Pattern matching
-python cleanup_failed_experiment.py --pattern "D5_*"
-
 # Dry run (preview without deleting)
 python cleanup_failed_experiment.py --job-id D5_0 --dry-run
 ```
 
 **What Gets Deleted**:
-1. Lock file: `shared/locks/job_{hash}.lock`
-2. Status file: `shared/status/job_{hash}.json`
-3. Experiment directory: `results/D{drug_id}/{job_id}/`
+1. Experiment directory: `results/D{drug_id}/{job_id}/`
 
 **Dependencies**: None (standalone)
 
@@ -242,8 +229,7 @@ results/
 │   │   │   ├── trial_0/
 │   │   │   │   ├── metrics.csv
 │   │   │   │   ├── hyperparameters.txt
-│   │   │   │   ├── model_best.pt (saved during training, may contain pruning masks)
-│   │   │   │   └── model_final.pt (final model with pruning masks removed)
+│   │   │   │   └── model_best.pt (mask-free after training)
 │   │   │   └── ...
 │   │   ├── final_results.json
 │   │   └── study_summary.txt
@@ -308,7 +294,7 @@ Pruning occurs during training:
   - Edges needed to reach target sparsity (`nest_edges_by_layer`)
   - `prune_percentage * remaining_edges`
 - **Validation**: Models are only saved if they achieve target sparsity (`is_fully_pruned_to_target()`)
-- **Final Model**: Pruning masks are removed before saving `model_final.pt` for clean deployment
+- **Final Model**: Pruning masks are removed and `model_best.pt` is rewritten with plain weights
 
 Example: If `prune_frequency=10` and `prune_percentage=0.1`:
 - Epoch 10: Prune up to 10% of remaining weights (or amount needed to reach target)
@@ -320,101 +306,13 @@ Example: If `prune_frequency=10` and `prune_percentage=0.1`:
 
 ---
 
-## Verification Against Code
-
-### Model Architecture Verification
-
-**From `layer_prune_fc_nn.py:38-48`**:
-```python
-self.nodes_per_layer = {
-    0: input_dim,  # 689
-    1: 76 * self.genotype_hiddens,  # 304 (if genotype_hiddens=4)
-    2: 32 * self.genotype_hiddens,  # 128
-    3: 13 * self.genotype_hiddens,   # 52
-    4: 4 * self.genotype_hiddens,    # 16
-    5: 2 * self.genotype_hiddens,    # 8
-    6: 2 * self.genotype_hiddens,    # 8
-    7: 1 * self.genotype_hiddens,    # 4
-    8: 1 * self.genotype_hiddens,    # 4
-}
-```
-✅ Verified: Architecture matches documentation
-
-### Pruning Logic Verification
-
-**From `layer_prune_fc_nn.py:107`**:
-```python
-edges_to_prune_additional = max(0, min(
-    weight_left_count - target_edges,
-    int(sparsity_level * weight_left_count)
-))
-```
-✅ Verified: Pruning uses minimum of target-based and sparsity-based pruning
-
-### Hyperparameter Ranges Verification
-
-**From `layer_prune_nn_hparam_tuner.py:292-296`**:
-```python
-self.prune_frequency = trial.suggest_int("prune_frequency", 1, 50, step=1)
-self.prune_percentage = trial.suggest_float("prune_percentage", 0.05, 0.5, log=False, step=0.05)
-self.use_batchnorm = trial.suggest_categorical("use_batchnorm", [True, False])
-```
-✅ Verified: Hyperparameter ranges match documentation (prune_percentage minimum is 0.05)
-
-### Model Saving and Validation Verification
-
-**From `layer_prune_nn_hparam_tuner.py:504-514`**:
-```python
-# Only save if fully pruned to target
-if model.is_fully_pruned_to_target():
-    if min_loss is None or min_loss - new_val_loss > 0.0001:
-        best_model_state = deepcopy(model.state_dict())
-        torch.save(best_model_state, f"{trial_dir}/model_best.pt")
-```
-✅ Verified: Models are only saved when target sparsity is achieved
-
-**From `layer_prune_nn_hparam_tuner.py:544-551`**:
-```python
-# Remove pruning masks before saving final model
-for layer in model.NN:
-    if isinstance(layer, torch.nn.Linear):
-        if hasattr(layer, 'weight_mask'):
-            prune.remove(layer, 'weight')
-torch.save(model.state_dict(), f"{trial_dir}/model_final.pt")
-```
-✅ Verified: Pruning masks are removed before saving final model
-
-**From `layer_prune_nn_hparam_tuner.py:563-565`**:
-```python
-if not model.is_fully_pruned_to_target():
-    return -1000.0  # Signal bad trial to Optuna
-```
-✅ Verified: Failed trials return -1000.0 to Optuna
-
-### Bundled job lists
-
-Run training commands from **`jobs/layer_prune_nn_jobs.txt`** (each line invokes **`layer_prune_nn_hparam_tuner.py`** with paths under **`../../Data/`**).
-
-**Example command shape**:
-```python
-command = (
-    f"python -u layer_prune_nn_hparam_tuner.py "
-    f"-drug {drug} ..."
-)
-```
-✅ Verified: Commands use correct script name
-
-
----
-
 ## Summary
 
 This system provides a complete pipeline for hyperparameter tuning of Layer Pruned Fully Connected Neural Networks:
 
 1. **Model**: `LayerPrunedFC_NN` with iterative L1-norm pruning and target sparsity validation
 2. **Optimization**: Optuna-based hyperparameter search with trial failure handling
-3. **Execution**: Distributed GPU queue management with file-based locking
-4. **Monitoring**: Status tracking, job monitoring, and cleanup tools
+3. **Execution**: one command per `(drug, experiment)` in `jobs/`
 
 The methodology combines:
 - **Architecture Search**: Finding optimal network configuration (activation, BatchNorm, dropout)
@@ -425,8 +323,6 @@ The methodology combines:
 ### Key Implementation Details
 
 - **Model Saving**: `model_best.pt` is saved during training only when `is_fully_pruned_to_target()` returns `True`
-- **Final Model**: `model_final.pt` has pruning masks removed using `prune.remove()` for clean deployment
+- **Final Model**: Pruning masks are removed with `prune.remove()` and `model_best.pt` is rewritten with plain weights
 - **Trial Failure**: Trials that don't achieve target sparsity return `-1000.0` to Optuna
 - **Pruning Range**: `prune_percentage` ranges from 0.05 to 0.5 (minimum 5% to ensure pruning occurs)
-
-All components are verified to work together seamlessly, with proper path handling, job coordination, result management, and robust error handling.

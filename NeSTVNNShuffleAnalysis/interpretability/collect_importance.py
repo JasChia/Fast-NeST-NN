@@ -1,8 +1,9 @@
 """Aggregate per-run rlipp.out / gene_rho.out into two tidy CSVs.
 
-Emits long-format tables keyed by (drug, arm, experiment) so the unshuffled and
-shuffled arms can be paired directly -- within a pair both models share the same
-train/test split and differ only in gene order.
+Emits long-format tables keyed by (drug, arm, experiment) so the unshuffled arm can be
+paired directly with the shuffled (gene order permutation) and degshuf (degree-preserving
+first-layer swapping) arms -- within a pair both models share the same train/test partition
+and the same test cells the scores are computed on.
 """
 import re
 from pathlib import Path
@@ -10,7 +11,7 @@ import pandas as pd
 
 I = Path(__file__).resolve().parent
 RES = I / "results"
-rx = re.compile(r"^D(\d+)_(unshuffled|shuffled)_exp_(\d+)$")
+rx = re.compile(r"^D(\d+)_(unshuffled|shuffled|degshuf)_exp_(\d+)$")
 
 terms, genes, missing = [], [], []
 for run in sorted(RES.iterdir()):

@@ -17,9 +17,14 @@ _ap.add_argument("--scores-dir", type=Path, default=Path("scores"),
 _ap.add_argument("--drugs", default=",".join(map(str, DRUG_IDS)),
                  help="comma-separated drugs to report on, or 'all' to keep every drug "
                       "found (default: the reported 10)")
+_ap.add_argument("--degenerate", choices=["zero", "drop"], default="zero",
+                 help="how to treat runs that collapsed to a constant prediction, whose "
+                      "correlations are undefined: 'zero' scores them 0 (default), 'drop' "
+                      "leaves them out of the correlation means")
 _args = _ap.parse_args()
 OUT = _args.scores_dir
 KEEP = None if _args.drugs.strip().lower() == "all" else [int(x) for x in _args.drugs.split(",")]
+DEGENERATE = _args.degenerate
 METRICS = ["test_spearman", "test_rmse", "test_r2", "test_pearson"]
 
 frames = []
@@ -50,6 +55,22 @@ if len(bad):
     print(f"\n!! {len(bad)} rows FAILED verification -- excluded from statistics:")
     print(bad[["method","drug","experiment","note"]].to_string(index=False))
 ok = all_df[all_df["verify_ok"] == 1].copy()
+
+# ---- runs that collapsed to a constant prediction ----
+# Pearson and Spearman are undefined for a constant predictor. Leaving them NaN and
+# letting the mean skip them is available-case analysis under informative missingness:
+# the value is absent precisely because the model failed, so the surviving mean flatters
+# whichever method fails most. A constant has no monotone or linear association with the
+# outcome, so 0 is the limiting value, not a filler. R2 and RMSE stay as computed --
+# both are defined for a constant predictor and already penalise it.
+CORR = [c for c in ("val_pearson", "val_spearman", "test_pearson", "test_spearman")
+        if c in ok.columns]
+n_undefined = int(ok[CORR].isna().to_numpy().sum())
+if DEGENERATE == "zero":
+    ok[CORR] = ok[CORR].fillna(0.0)
+    print(f"\ndegenerate handling 'zero': {n_undefined} undefined correlations scored 0")
+else:
+    print(f"\ndegenerate handling 'drop': {n_undefined} undefined correlations excluded")
 
 # ---- summary per method ----
 rows = []

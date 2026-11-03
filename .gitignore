@@ -1,5 +1,9 @@
 .secrets
-Data/
+# Data/ holds multi-GB local inputs; its README and the NeST graph files are tracked.
+Data/*
+!Data/README.md
+!Data/red_ontology.txt
+!Data/red_gene2ind.txt
 .git-credentials
 nohup.out
 .nfs*
@@ -17,15 +21,6 @@ __pycache__/
 # method directory it was launched from.
 *.log
 
-# Internal post-mortem kept locally; references tooling this repo does not ship.
-ArchitecturePerformanceExperiments/LP-NN/JOB_FAILURE_ANALYSIS.md
-
 # Job lists under ArchitecturePerformanceExperiments/*/jobs/ are tracked (relative paths to <repo>/Data).
 
-# Local scratch / smoke output dirs (not for commit)
-scripts/verify.log
-Profiling/VERIFY_SMOKE_results/
-ArchitecturePerformanceExperiments/**/VERIFY_SMOKE/
-NeSTVNNShuffleAnalysis/**/VERIFY_SMOKE/
-
-scripts/
+/scripts/

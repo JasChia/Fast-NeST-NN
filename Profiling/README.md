@@ -41,6 +41,14 @@ The primary publication figure is:
 
 (for example `profiling_results/npa_4/speedup_fnest_vs_nest_vnn_bar.png`). It shows **Model Inference** and **Model Training** speedup of **fNeST-NN** over **NeST-VNN** vs batch size. Filename constant: `PAPER_SPEEDUP_BAR_FIGURE` in `profile_networks.py`.
 
+To redraw it and `summary_statistics.csv` from saved timings, without a GPU:
+
+```bash
+python replot_from_raw.py --npa-dir profiling_results/npa_4 --output-dir replot
+```
+
+The training time is one forward pass, loss and backward pass; the optimizer step is not timed.
+
 ---
 
 ## 1. Ontology data paths (portable defaults)

@@ -8,11 +8,11 @@ Activate the Conda env from root **`environment.yml`** (`conda activate fast-nes
 
 **`r_sparse_nn_hparam_tuner.py`** supports **`-n_trials`**, **`-max_epochs`** (default **500**; use **`-max_epochs 10`** for a quick run), **`-cuda`**, **`-train_file`**, **`-val_file`**, **`-test_file`**, **`-cell2id`**, **`-ge_data`**, **`-output_dir`**.
 
-**Expected outputs:** **`Sparse_NN_HTune.log`**, **`trials/trial_*/model_best.pt`**, **`best_model/`**, **`final_results.json`**, per-trial **`metrics.csv`**. (Older documentation below may still mention `model_final.pt`; the tuner now saves a single **`model_best.pt`**.)
+**Expected outputs:** **`Sparse_NN_HTune.log`**, **`trials/trial_*/model_best.pt`**, **`best_model/`**, **`final_results.json`**, per-trial **`metrics.csv`**. (The tuner saves a single **`model_best.pt`**.)
 
 ## Overview
 
-This directory contains a complete system for hyperparameter tuning of sparse neural networks (Sparse_NN) for drug response prediction. The system uses Optuna for automated hyperparameter optimization and manages GPU resources to run hundreds of experiments in parallel.
+This directory contains a complete system for hyperparameter tuning of sparse neural networks (Sparse_NN) for drug response prediction. The system uses Optuna for automated hyperparameter optimization.
 
 ## Methodology
 
@@ -79,41 +79,17 @@ Each experiment maintains reproducibility through:
 ### Workflow
 
 ```
-┌─────────────────┐
-│                 │  (10 drugs × 50 experiments)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ jobs/               │
-│ - r_sparse_nn_      │
-│ - r_sparse_nn_      │
-│   jobs.txt          │
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ .py                 │  Executes jobs in parallel
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ r_sparse_nn_        │  Runs Optuna optimization
-│ hparam_tuner.py     │  (100 trials per experiment)
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ results/            │  Stores outputs:
-│ D{drug}/D{drug}_{i}/│  - Best models
-│   - trials/         │  - Metrics
-│   - study_summary   │  - Logs
-└─────────────────────┘
+jobs/r_sparse_nn_jobs.txt  (10 drugs × 50 experiments)
+        │  one line per job
+        ▼
+r_sparse_nn_hparam_tuner.py  (Optuna, 100 trials per experiment)
+        ▼
+results/D{drug}/D{drug}_{i}/
 ```
 
 ## What this repository contains (RSNN/)
 
-**Local-only (created when you run experiments; gitignored):** `results/`, `logs/`, `shared/`.
+**Local-only (created when you run experiments; gitignored):** `results/` and the per-job `D{drug}_{i}.log` files written by the job lines.
 
 ## Usage (current)
 
@@ -126,16 +102,15 @@ Each experiment maintains reproducibility through:
 ```text
 ArchitecturePerformanceExperiments/RSNN/
 ├── README.md
-├── DISTRIBUTED_SCHEDULING.md
 ├── r_sparse_nn_hparam_tuner.py
 ├── sparse_nn.py
 ├── cleanup_failed_experiment.py
 ├── test_sparsity_training.ipynb
 └── jobs/
-    ├── r_sparse_nn_jobs.txt
+    └── r_sparse_nn_jobs.txt
 ```
 
-After runs, **`results/`** and **`logs/`** may appear locally (ignored by Git).
+After runs, **`results/`** and the per-job logs appear locally (ignored by Git).
 
 ---
 
@@ -145,23 +120,22 @@ After runs, **`results/`** and **`logs/`** may appear locally (ignored by Git).
 
 Each experiment (e.g., `results/D5/D5_0/`) contains:
 
-1. **`D{drug}_{experiment}.log`**: Main experiment log file
-2. **`Sparse_NN_HTune.log`**: Optuna study log
-3. **`study_summary.txt`**: Summary of best hyperparameters and results
-4. **`trials/`**: Directory containing individual trial results
+1. **`Sparse_NN_HTune.log`**: Optuna study log
+2. **`study_summary.txt`**: Summary of best hyperparameters and results
+3. **`final_results.json`**, **`best_model_results.csv`**: Best validation and test R²
+4. **`best_model/`**: Copy of the best trial's directory
+5. **`trials/`**: Directory containing individual trial results
    - `trial_{n}/trial_{n}.log`: Trial-specific log
-   - `trial_{n}/model_best.pt`: Best model checkpoint (by validation R²)
-   - `trial_{n}/model_final.pt`: Final model checkpoint (after all epochs)
-   - `trial_{n}/metrics.csv`: Training metrics per epoch
+   - `trial_{n}/model_best.pt`: Best model checkpoint (lowest validation loss)
+   - `trial_{n}/metrics.csv`: Validation and test metrics of the best checkpoint
 
 ### Study Summary Format
 
 The `study_summary.txt` file contains:
-- Best trial number
+- Drug ID and seed
+- Best validation R² and best test R²
+- Total number of trials
 - Best hyperparameters (learning rate, dropout, activation, etc.)
-- Best validation R² score
-- Test set metrics (R², Pearson correlation, RMSE)
-- Number of completed trials
 
 ## Technical Details
 
@@ -172,9 +146,8 @@ The sparse network is generated using `torch.nn.utils.prune`:
 1. **Initial Pruning**: Uses `prune.random_unstructured()` to randomly prune connections
 2. **Mask Extraction**: Extracts pruning masks from temporary Linear layers
 3. **Node Aliveness Check**: Verifies each node has at least one input and one output connection
-4. **Regeneration**: If nodes are "dead", regenerates the network with a new seed (up to 10,000 attempts)
+4. **Regeneration**: If nodes are dead, samples a new network (up to 10,000 attempts)
 5. **Mask Application**: Uses `prune.custom_from_mask()` to apply masks to actual network layers
-6. **Bias Pruning**: Biases are zeroed if all incoming connections to that neuron are pruned
 
 ### Hyperparameter Search Space
 
@@ -196,49 +169,26 @@ Optuna explores the following hyperparameter space:
 
 - **Optimizer**: AdamW with betas=(0.9, 0.99), eps=1e-05
 - **Loss Function**: MSE Loss + L1 Regularization (if enabled)
-- **Epochs**: 500 per trial
-- **Early Stopping**: None (all epochs are completed)
+- **Epochs**: 500 maximum per trial
+- **Early stopping**: patience 20 epochs on validation loss
 - **Gradient Clipping**: Max norm of 1.0 to prevent gradient explosion
 - **Device**: CUDA (GPU) if available, CPU otherwise
 
-## Verification
+## Expected structure
 
-### Verify Experiment Structure
+### Experiment Structure
 
-Each experiment should have:
-- Unique seed: `experiment_id * 1000`
-- Unique data split: `experiment_{experiment_id}/`
-- Unique output directory: `results/D{drug}/D{drug}_{experiment_id}/`
+Each experiment has:
+- A unique seed: `experiment_id * 1000`
+- A unique data split: `experiment_{experiment_id}/`
+- A unique output directory: `results/D{drug}/D{drug}_{experiment_id}/`
 
-### Verify Sparse Network
+### Sparse Network
 
-The sparse network should have:
+The sparse network has:
 - Exact edge counts matching `nest_edges_by_layer`
 - All nodes "alive" (at least one input and one output connection)
 - Pruning masks maintained during training (via `torch.prune`)
-
-## Code Verification
-
-The following code snippets verify key aspects of the methodology:
-
-### Same Sparse Network Configuration
-
-From `r_sparse_nn_hparam_tuner.py`:
-```python
-# genotype_hiddens is fixed at 4 for all experiments
-self.genotype_hiddens = 4  # Fixed, not tuned
-```
-
-### Sparse Network Edge Counts
-
-From `sparse_nn.py`:
-```python
-self.nest_edges_by_layer = {
-    0: 1321 * self.genotype_hiddens,  # 5,284 edges (when genotype_hiddens=4)
-    1: 92 * self.genotype_hiddens * self.genotype_hiddens,  # 1,472 edges
-    # ... etc
-}
-```
 
 ## References
 
@@ -246,7 +196,6 @@ self.nest_edges_by_layer = {
 - **PyTorch Pruning**: `torch.nn.utils.prune` for maintaining sparsity
 - **Nest VNN**: Original architecture inspiration with hierarchical sparse connectivity
 
-## Contact
+## Loading a trained model
 
-For questions or issues, refer to the code comments or examine the log files in the `logs/` and `results/` directories.
-Note that when you load a sparse architecture initial seed doesn't matter before loading. All parameters will be replaced. Additionally, model_best and model_final should become the same in every trial cases.
+When you load a sparse architecture, the initial seed doesn't matter before loading. All parameters will be replaced.

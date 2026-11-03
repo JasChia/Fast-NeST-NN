@@ -15,17 +15,16 @@ done
 ```
 
 That produces `Data/nest_shuffle_data/CombatLog2TPM/Drug{ID}/D{ID}_CL/...`, which is the
-path every bundled job command uses. Extracting at the repository root instead gives
-`<repo>/D{ID}_CL/`, which no job can find.
+path every bundled job command uses.
 
-The ontology and gene-index files (`red_ontology.txt`, `red_gene2ind.txt`) are **not** in
-these archives; they are expected directly under `Data/`.
+The ontology and gene-index files (`red_ontology.txt`, `red_gene2ind.txt`) are expected
+directly under `Data/`.
 
 ---
 
 ## Archives present in `Data_archives/` (this repository)
 
-These files are what you get from a normal clone (names may evolve; list the folder to confirm):
+These files are what you get from a normal clone:
 
 | Archive |
 |---------|
@@ -40,8 +39,7 @@ These files are what you get from a normal clone (names may evolve; list the fol
 | `D298_CL.tar.gz` |
 | `D380_CL.tar.gz` |
 
-These ten IDs are the reported drug set, used by every bundled job list. Models were also
-trained for D57 and D201, which are filtered out before reporting and have no archive here.
+These ten IDs are the reported drug set, used by every bundled job list.
 
 ---
 

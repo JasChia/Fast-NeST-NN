@@ -4,6 +4,7 @@ nest_vnn/shuffle_assignment_analysis/outputs/
 
 # Degree-preserving shuffle arm: per-run training outputs
 degree_preserving_shuffle/nest_vnn_logs/
+degree_preserving_shuffle/tables/
 
 # Interpretability: per-run scores and the collected importance tables (tens of MB)
 interpretability/results/
@@ -11,3 +12,4 @@ interpretability/assembly_importance.csv
 interpretability/gene_importance.csv
 interpretability/ranking_*.csv
 interpretability/ranking_report*.txt
+interpretability/table4_*.csv

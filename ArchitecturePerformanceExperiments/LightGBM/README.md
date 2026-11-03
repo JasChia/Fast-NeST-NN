@@ -94,9 +94,7 @@ the train/val/test protocol.
 | `bagging_freq` | 1 – 7 | int |
 | `lambda_l1`, `lambda_l2` | 1e-8 – 10.0 | log-uniform float |
 
-`FIXED_PARAMS` sets `deterministic: True` and `force_row_wise: True`. Both are needed:
-without them LightGBM's histogram construction depends on thread count, so the same seed
-and the same `-num_threads` still produce different boosters across machines.
+`FIXED_PARAMS` sets `deterministic: True` and `force_row_wise: True`.
 
 `seed`, `bagging_seed` and `feature_fraction_seed` are set to `trial.number + -seed`, so
 each trial is independently seeded.

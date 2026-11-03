@@ -81,7 +81,7 @@ Use the repository root **`environment.yml`** (see root **`README.md`**; `conda 
 
 ### 2. Logs and monitoring
 
-Use your scheduler’s logs; this repo does not ship the old Python GPU queue drivers.
+Use your scheduler’s logs.
 
 ## Testing the Model
 

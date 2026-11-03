@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sequentially run every training command in jobs.txt (1200 jobs).
+# Sequentially run every training command in jobs.txt (1000 jobs).
 # Prerequisite: cd to nest_vnn/ so ../Data and nest_vnn_logs/ resolve correctly.
 #
 # Usage:

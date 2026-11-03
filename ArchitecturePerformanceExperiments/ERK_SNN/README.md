@@ -58,16 +58,12 @@ The `ERK_SNN` model uses a hierarchical sparse architecture inspired by Nest VNN
   - Layer 8: 1 × `genotype_hiddens` nodes (default: 4 nodes)
 - **Output Layer**: 1 node (drug response prediction)
 
-**Sparsity**: Each layer has a predefined number of edges (connections) that is much smaller than a fully connected network:
-- Layer 0: 1321 × `genotype_hiddens` edges (default: 5,284 edges)
-- Layer 1: 92 × `genotype_hiddens`² edges (default: 1,472 edges)
-- Layer 2: 36 × `genotype_hiddens`² edges (default: 576 edges)
-- And so on...
+**Sparsity**: ERK densities are scaled to a target overall sparsity equal to the NeST network's, `1 - sum(nest_edges_by_layer) / total fully connected edges`; ERK decides how the edges are spread across layers.
 
 **ERK Initialization**: The sparse connectivity is initialized using Erdos-Renyi Kernel (ERK) probabilities:
-1. **ERK Probability Calculation**: For each layer, ERK probability is calculated as `p_l = 1 - (n_{l-1} + n_l) / (n_{l-1} * n_l)`, where `n_l` is the number of nodes in layer `l`
-2. **Scaling**: ERK probabilities are scaled to match the target overall sparsity (derived from NeST edge counts)
-3. **Edge Sampling**: Edges are sampled using Bernoulli distribution with ERK probabilities, then adjusted to exactly match target edge counts per layer
+1. **ERK Density Calculation**: For each layer, ERK density is calculated as `d_l = (n_{l-1} + n_l) / (n_{l-1} * n_l)`, where `n_l` is the number of nodes in layer `l`
+2. **Scaling**: ERK densities are scaled (capped at 1.0) toward the target overall sparsity (derived from NeST edge counts)
+3. **Edge Sampling**: For each layer, `max(1, int(d'_l · n_{l-1} · n_l))` edges are chosen uniformly at random, where `d'_l` is the scaled, capped density
 4. **Node Aliveness**: Ensures each node has at least one input and one output connection ("alive" nodes)
 5. **Regeneration**: Regenerates the network if nodes become "dead" (up to 10,000 attempts)
 6. **Sparsity Maintenance**: Maintains sparsity during training through pruning masks
@@ -107,7 +103,7 @@ grep -v '^#' jobs/ERK_SNN_jobs.txt | grep -v '^$' | bash
 ### Step 2: Monitor Progress
 
 ```bash
-tail -f logs/*.log
+tail -f D*_*.log
 ```
 
 ### Step 3: Check Results
@@ -118,8 +114,8 @@ Results are organized by drug and experiment:
 # View results for a specific drug/experiment
 ls -la results/D5/D5_0/
 
-# View study summary
-cat results/D5/D5_0/study_summary.txt
+# View final results
+cat results/D5/D5_0/final_results.json
 
 # Check trial results
 ls results/D5/D5_0/trials/
@@ -133,19 +129,19 @@ ERK_SNN/
 ├── ERK_SNN_hparam_tuner.py         # Hyperparameter tuning script
 ├── ERK_SNN.py                      # ERK_SNN model definition
 ├── jobs/                           # Bundled job command lists
-│   ├── ERK_SNN_jobs.txt
-├── logs/                           # Log files (when you run experiments)
+│   └── ERK_SNN_jobs.txt
+├── D{drug}_{experiment}.log        # Per-job stdout (when you run experiments)
 └── results/                        # Experiment results
     └── D{drug}/                    # Per-drug directory
         └── D{drug}_{experiment}/    # Per-experiment directory
-            ├── D{drug}_{experiment}.log
             ├── ERK_SNN_HTune.log
-            ├── study_summary.txt
+            ├── final_results.json
+            ├── best_model_results.csv
+            ├── best_model/
             └── trials/              # Optuna trial results
                 └── trial_{n}/
                     ├── trial_{n}.log
                     ├── model_best.pt
-                    ├── model_final.pt
                     └── metrics.csv
 ```
 
@@ -155,23 +151,14 @@ ERK_SNN/
 
 Each experiment (e.g., `results/D5/D5_0/`) contains:
 
-1. **`D{drug}_{experiment}.log`**: Main experiment log file
-2. **`ERK_SNN_HTune.log`**: Optuna study log
-3. **`study_summary.txt`**: Summary of best hyperparameters and results
-4. **`trials/`**: Directory containing individual trial results
+1. **`ERK_SNN_HTune.log`**: Optuna study log
+2. **`final_results.json`**: Best validation and test R², best hyperparameters, trial count, drug ID and seed
+3. **`best_model_results.csv`**: Best test and validation R²
+4. **`best_model/`**: Copy of the best trial's directory plus `hyperparameters.json`
+5. **`trials/`**: Directory containing individual trial results
    - `trial_{n}/trial_{n}.log`: Trial-specific log
-   - `trial_{n}/model_best.pt`: Best model checkpoint (by validation R²)
-   - `trial_{n}/model_final.pt`: Final model checkpoint (after all epochs)
-   - `trial_{n}/metrics.csv`: Training metrics per epoch
-
-### Study Summary Format
-
-The `study_summary.txt` file contains:
-- Best trial number
-- Best hyperparameters (learning rate, dropout, activation, etc.)
-- Best validation R² score
-- Test set metrics (R², Pearson correlation, RMSE)
-- Number of completed trials
+   - `trial_{n}/model_best.pt`: Best model checkpoint (lowest validation loss)
+   - `trial_{n}/metrics.csv`: Validation and test metrics of the best checkpoint
 
 ## Technical Details
 
@@ -179,15 +166,12 @@ The `study_summary.txt` file contains:
 
 The sparse network is generated using ERK (Erdos-Renyi Kernel) initialization:
 
-1. **ERK Probability Calculation**: For each layer, calculates ERK probability based on layer dimensions: `p_l = 1 - (n_{l-1} + n_l) / (n_{l-1} * n_l)`
-2. **Sparsity Scaling**: Scales ERK probabilities to match target overall sparsity (derived from NeST edge counts)
-3. **Edge Sampling**: Samples edges using Bernoulli distribution with ERK probabilities
-4. **Edge Count Adjustment**: Adjusts sampled edges to exactly match target edge counts per layer
-5. **Node Aliveness Check**: Verifies each node has at least one input and one output connection
+1. **ERK Density Calculation**: For each layer, calculates ERK density based on layer dimensions: `d_l = (n_{l-1} + n_l) / (n_{l-1} * n_l)`
+2. **Sparsity Scaling**: Scales ERK densities toward the target overall sparsity (derived from NeST edge counts)
+3. **Edge Sampling**: For each layer, `max(1, int(d'_l · n_{l-1} · n_l))` edges are chosen uniformly at random, where `d'_l` is the scaled, capped density
+4. **Node Aliveness Check**: Verifies each node has at least one input and one output connection
+5. **Regeneration**: If nodes are "dead", samples a new network (up to 10,000 attempts)
 6. **Mask Application**: Uses `torch.nn.utils.prune.custom_from_mask()` to apply masks to Linear layers
-4. **Regeneration**: If nodes are "dead", regenerates the network with a new seed (up to 10,000 attempts)
-5. **Mask Application**: Uses `prune.custom_from_mask()` to apply masks to actual network layers
-6. **Bias Pruning**: Biases are zeroed if all incoming connections to that neuron are pruned
 
 ### Hyperparameter Search Space
 
@@ -209,24 +193,24 @@ Optuna explores the following hyperparameter space:
 
 - **Optimizer**: AdamW with betas=(0.9, 0.99), eps=1e-05
 - **Loss Function**: MSE Loss + L1 Regularization (if enabled)
-- **Epochs**: 500 per trial
-- **Early Stopping**: None (all epochs are completed)
+- **Epochs**: 500 maximum per trial
+- **Early stopping**: patience 20 epochs on validation loss
 - **Gradient Clipping**: Max norm of 1.0 to prevent gradient explosion
 - **Device**: CUDA (GPU) if available, CPU otherwise
 
-## Verification
+## Expected structure
 
-### Verify Experiment Structure
+### Experiment Structure
 
-Each experiment should have:
-- Unique seed: `experiment_id * 1000`
-- Unique data split: `experiment_{experiment_id}/`
-- Unique output directory: `results/D{drug}/D{drug}_{experiment_id}/`
+Each experiment has:
+- A unique seed: `experiment_id * 1000`
+- A unique data split: `experiment_{experiment_id}/`
+- A unique output directory: `results/D{drug}/D{drug}_{experiment_id}/`
 
-### Verify Sparse Network
+### Sparse Network
 
-The sparse network should have:
-- Exact edge counts matching `nest_edges_by_layer`
+The sparse network has:
+- Per-layer edge counts set by the scaled ERK densities
 - All nodes "alive" (at least one input and one output connection)
 - Pruning masks maintained during training (via `torch.prune`)
 
@@ -236,7 +220,6 @@ The sparse network should have:
 - **PyTorch Pruning**: `torch.nn.utils.prune` for maintaining sparsity
 - **Nest VNN**: Original architecture inspiration with hierarchical sparse connectivity
 
-## Contact
+## Loading a trained model
 
-For questions or issues, refer to the code comments or examine the log files in the `logs/` and `results/` directories.
-Note that when you load a sparse architecture initial seed doesn't matter before loading. All parameters will be replaced. Additionally, model_best and model_final should become the same in every trial cases.
+When you load a sparse architecture, the initial seed doesn't matter before loading. All parameters will be replaced.

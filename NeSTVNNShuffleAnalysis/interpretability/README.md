@@ -15,7 +15,8 @@ prediction, not measured AUC.
 ## Score one run
 
 Two steps per `(drug, arm, experiment)`: dump hidden states with the repo's `src/predict.py`,
-then score them. No scheduler script is included; each run is independent.
+then score them. `run_importance.sh <drug> <arm> <experiment> [cpu_count]` does both for any
+of the three arms (`unshuffled`, `shuffled`, `degshuf`); each run is independent. The steps for the unshuffled and shuffled arms are:
 
 ```bash
 D=127; ARM=unshuffled; E=0; NCPU=8
@@ -50,15 +51,16 @@ python -u "$I/calc_scores_serial.py" \
 cp "$TMP/predict.txt" "$OUT/predict.txt"
 ```
 
-Three things in there matter:
+Four things in there matter:
 
-- **`-std "$RUN/std.txt"`** must be that run's own file. A different arm's silently
-  rescales the inputs.
-- **`-transcriptomic`** must match what the arm trained on. Getting it wrong gives
-  plausible but meaningless scores.
+- **`-std "$RUN/std.txt"`** must be that run's own file.
+- **`-transcriptomic`** must match what the arm trained on.
+- **`degshuf` runs** live in `../degree_preserving_shuffle/nest_vnn_logs/` and train on the
+  unpermuted matrix. The scorer's `-ontology` must be that experiment's rewired file,
+  `../degree_preserving_shuffle/ontologies/red_ontology_degshuf_exp{E}.txt`; `predict.py`
+  needs none, because the pickled model already carries its wiring.
 - **Hidden dumps go to scratch and are deleted.** `predict.py` writes ~1,640 files per
-  run; 1,200 runs is ~2M files and will exhaust a typical inode quota. Only `rlipp.out`,
-  `gene_rho.out` and `predict.txt` are kept.
+  run; only `rlipp.out`, `gene_rho.out` and `predict.txt` are kept.
 
 About 137 s per run on one mid-range GPU (predict ~127 s, scoring ~10 s).
 
@@ -66,26 +68,40 @@ About 137 s per run on one mid-range GPU (predict ~127 s, scoring ~10 s).
 
 ```bash
 python collect_importance.py    # -> assembly_importance.csv, gene_importance.csv
-python analyze_rankings.py      # -> ranking_*.csv, ranking_report.txt
-python verify_equivalence.py    # checks the vendored calculator
+python analyze_rankings.py > ranking_report.txt   # -> ranking_*.csv
+python build_supp_tables.py                       # gene order permutation -> table4_{assembly,overlap,gene}.csv
+python build_supp_tables.py --perturbed degshuf   # degree-preserving -> table4_*_degshuf.csv
+python verify_equivalence.py <dir with hidden/ and predict.txt> <drug> <experiment>   # checks the vendored calculator
 ```
 
-These three resolve the repo root from their own location and take no path arguments.
+`collect_importance.py`, `analyze_rankings.py` and `build_supp_tables.py` resolve paths from their own location; `build_supp_tables.py` also takes `--perturbed`, `--importance-dir` and `--out-dir`.
 
-**Say which alignment you mean.** Gene retention between arms is 51.7% identity-aligned
+Gene retention between arms is 51.7% identity-aligned
 and 3.4% slot-aligned. Those answer different questions — does the same *gene* stay
-important, or the same *position* — and support opposite conclusions.
+important, or the same *position*.
 `analyze_rankings.py` writes both (`ranking_gene_by_drug_identity.csv`,
-`ranking_gene_by_drug_slot.csv`).
+`ranking_gene_by_drug_slot.csv`). Those figures use signed gene rho and compare models
+across different splits.
+
+**Main Table 4** comes from `build_supp_tables.py`, which compares the unshuffled model with
+the shuffled (default) or degree-preserving (`--perturbed degshuf`) model of the *same* split.
+Its Assembly SI, Gene SI and Important Assemblies Shared columns are the mean/SD in
+`table4_assembly*.csv`, `table4_gene*.csv` and the `si_ge_0.5` column of `table4_overlap*.csv`;
+the Mean row is the unweighted mean of the 10 drug means. Gene scores are aligned by identity, which for
+`degshuf` is the input position, and use |rho|. Each per-drug p-value tests the same-split agreement against a resampling reference
+(unshuffled models of different splits), not against zero; the script's docstring gives the
+exact definitions.
 
 ## Files
 
 | Script | Role |
 |---|---|
+| `run_importance.sh` | Predict + score one run of any arm → `results/D{N}_{arm}_exp_{E}/` |
 | `calc_scores_serial.py` | Score one run → `rlipp.out`, `gene_rho.out` |
 | `collect_importance.py` | Gather runs into the two importance CSVs |
 | `analyze_rankings.py` | Ranking comparisons between arms |
+| `build_supp_tables.py` | Same-split agreement for either perturbation, main Table 4 |
 | `verify_equivalence.py` | Check the vendored calculator |
 | `rlipp_calculator.py`, `rlipp_helper.py` | Vendored upstream — do not edit |
 
-Outputs (`results/`, the importance CSVs, `ranking_*`) are not tracked.
+Outputs (`results/`, the importance CSVs, `ranking_*`, `table4_*`) are not tracked.
